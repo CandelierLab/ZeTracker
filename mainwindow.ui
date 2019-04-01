@@ -160,7 +160,7 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QTextBrowser" name="textBrowser">
+   <widget class="QTextBrowser" name="INFOS">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -285,7 +285,7 @@
      <item row="0" column="0" colspan="2">
       <widget class="QLabel" name="MOTION_STATUS">
        <property name="styleSheet">
-        <string notr="true">background:red;</string>
+        <string notr="true">background:#ff5050;</string>
        </property>
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
@@ -504,7 +504,7 @@
    <zorder>IMAGE_4</zorder>
    <zorder>TITLE_MOTION</zorder>
    <zorder>TITLE_VISION</zorder>
-   <zorder>textBrowser</zorder>
+   <zorder>INFOS</zorder>
    <zorder>gridLayoutWidget</zorder>
    <zorder>formLayoutWidget</zorder>
    <zorder>gridLayoutWidget_2</zorder>
