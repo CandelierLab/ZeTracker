@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2019-04-01T11:57:26
+# Project created by QtCreator 2019-03-29T14:02:23
 #
 #-------------------------------------------------
 
@@ -35,6 +35,18 @@ FORMS += \
         mainwindow.ui
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+# qnx: target.path = /tmp/$${TARGET}/bin
+# else: unix:!android: target.path = /opt/$${TARGET}/bin
+# !isEmpty(target.path): INSTALLS += target
+
+# === Platform-specific libraries ==========================================
+
+unix: LIBS += -L$$PWD/'../ftd2xx_linux/build/' -lftd2xx
+unix: INCLUDEPATH += $$PWD/'../ftd2xx_linux'
+unix: DEPENDPATH += $$PWD/'../ftd2xx_linux'
+
+unix:!macx: LIBS += -L/usr/lib -lSpinnaker
+unix:!macx: INCLUDEPATH += /usr/include/spinnaker
+
+unix: INCLUDEPATH += /usr/local/include/opencv4/
+unix: LIBS += -L/usr/local/lib64/ -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio -lopencv_video -lopencv_photo
