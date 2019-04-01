@@ -27,11 +27,15 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    Motion.cpp
+    Motion.cpp \
+    MsgHandler.cpp \
+    FTDI.cpp
 
 HEADERS += \
         mainwindow.h \
-    Motion.h
+    Motion.h \
+    MsgHandler.h \
+    FTDI.h
 
 FORMS += \
         mainwindow.ui

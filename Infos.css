@@ -1,0 +1,37 @@
+p {
+  font-size: 10px;
+  margin: 2px 5px;
+  padding: 0;
+}
+
+.title1 {
+  font-size: 12px;
+  font-weight: bold;
+  margin: 7px 5px;
+  color: #135ea5;
+}
+
+.title2 {
+  font-size: 11px;
+  font-weight: bold;
+  margin: 7px 5px;
+  color: #555;
+}
+
+.thread {
+  color: #5788b6;
+}
+
+.warning {
+  color: #ff5050;
+}
+
+.critical {
+  color: red;
+  font-weight: bold;
+}
+
+.fatal {
+  color: black;
+  font-weight: bold;
+}

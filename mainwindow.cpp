@@ -9,46 +9,61 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
 
-    // --- User interface -----------------------
+    // === DEFINITIONS =====================================================
 
-        ui->setupUi(this);
-        this->setWindowTitle("Controller");
-        move(0,0);
+    // --- User interface
+    ui->setupUi(this);
+    this->setWindowTitle("Controller");
+    move(0,0);
+
+    // --- Shortcuts
+    sExit = new QShortcut(Qt::Key_Escape, this);
+
+    // --- Messages
+    MsgHandle = new MsgHandler(ui->INFOS);
+
+    // qInfo() << THREAD << "Main process lives in thread ";
+
+    // --- Motion
+    Motion = new class Motion();
+
+    // --- Vision
+
+    // === INITIALIZATIONS =================================================
 
 
-        // --- Vision -------------------------------
 
+    // === CONNECTIONS =====================================================
 
-        // --- Shortcuts ----------------------------
+    // --- Shortcuts
+    connect(sExit, SIGNAL(activated()), QApplication::instance(), SLOT(quit()));
 
-        sExit = new QShortcut(Qt::Key_Escape, this);
+    // --- Menu
+    // connect(ui->actionScanJoystick, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
 
-        // --- Connections --------------------------
+    // --- Motion -------------------------------
 
-        // Shortcuts
-         connect(sExit, SIGNAL(activated()), QApplication::instance(), SLOT(quit()));
+    // State
+    connect(Motion, SIGNAL(setMotionState(bool)), this, SLOT(setMotionState(bool)));
 
-        // Menu
-        // connect(ui->actionScanJoystick, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
+    // Displacement pad
+    // connect(ui->Move_UL, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_U,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_UR, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_L,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_R,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_DL, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_D,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    //        connect(ui->Move_DR, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
 
-        // Displacement pad
-        // connect(ui->Move_UL, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_U,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_UR, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_L,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_R,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_DL, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_D,  SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
-//        connect(ui->Move_DR, SIGNAL(toggled(bool)), this, SLOT(Move(bool)));
+    // Reset counts
+    //        connect(ui->ResetCounts, SIGNAL(pressed()), this, SLOT(resetCounts()));
 
-//        connect(ui->ResetCounts, SIGNAL(pressed()), this, SLOT(resetCounts()));
+    // Pointer
+    //        connect(ui->Pointer,  SIGNAL(toggled(bool)), this, SLOT(Pointer(bool)));
 
-        // Pointer
-//        connect(ui->Pointer,  SIGNAL(toggled(bool)), this, SLOT(Pointer(bool)));
+    // --- Visions ------------------------------
 
-        // --- Camera
-
-        // --- Scan controller -------------------------------------------------
 }
 
 /* ====================================================================== *
@@ -61,14 +76,18 @@ MainWindow::MainWindow(QWidget *parent) :
  *      MOTION                                                            *
  * ====================================================================== */
 
-// === POINTER
+void MainWindow::setMotionState(bool b) {
 
-//void MainWindow::Pointer(bool b) {
+    if (b) {
+        ui->MOTION_STATE->setText(QString("ENABLED"));
+        ui->MOTION_STATE->setStyleSheet(QString("background:#99ff99;"));
+    } else {
+        ui->MOTION_STATE->setText(QString("DISABLED"));
+        ui->MOTION_STATE->setStyleSheet(QString("background:#ff5050;"));
+    }
 
-//    FTDI->Dev[FTDI->cdi]->setPin(6, b);
-//    FTDI->Dev[FTDI->cdi]->sendOutput();
+}
 
-//}
 
 // === INPUTS
 

@@ -8,7 +8,7 @@
 #include <QShortcut>
 #include <QDebug>
 
-// #include "MsgHandler.h"
+#include "MsgHandler.h"
 #include "Motion.h"
 // #include "Vision.h"
 // #include "Interface.h"
@@ -25,12 +25,23 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+signals:
+
+public slots:
+
+    // --- Motion
+    void setMotionState(bool);
+
+    // --- Vision
+
 private:
 
     // --- GUI
     Ui::MainWindow *ui;
     QShortcut *sExit;
+    MsgHandler *MsgHandle;
 
+    class Motion *Motion;
 
 };
 
