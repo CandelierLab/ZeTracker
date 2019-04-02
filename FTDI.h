@@ -1,6 +1,13 @@
 #ifndef FTDI_H
 #define FTDI_H
 
+#define SWITCH_XL 0
+#define SWITCH_XR 1
+#define SWITCH_YLF 2
+#define SWITCH_YLR 3
+#define SWITCH_YRF 4
+#define SWITCH_YRR 5
+
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -11,6 +18,7 @@
 #include <QtMath>
 #include <QDebug>
 
+#include "Motion.h"
 #include "MsgHandler.h"
 
 #ifdef __linux__
@@ -34,7 +42,7 @@ public:
 
     /* === METHODS =========================== */
 
-    FTDI_Device();
+    FTDI_Device(class Motion*);
     ~FTDI_Device();
 
     // Open device
@@ -49,18 +57,13 @@ public:
     void setPin(int, bool);
     void sendOutput();
 
-    // Interface
-    void resetCounts();
-
     /* === PROPERTIES ======================== */
 
     int device_id;
     QString Type;
     QString SerialNumber;
 
-    long int XloopPeriod, YloopPeriod;
-    bool isRunningLoop;
-    bool isRunningX, isRunningY, isRunningYL, isRunningYR;
+    bool running;
 
 public slots:
 
@@ -68,10 +71,9 @@ public slots:
 
 signals:
 
-    void inputRead(int);
     void enableState(bool);
-    void updateCount(int, int);
-    void uncheckPad();
+    void setPad(int, bool);
+    void switchTriggered(int);
     void finished();
 
 private:
@@ -107,9 +109,7 @@ private:
     DWORD NumBytesRead = 0;
     DWORD NumBytesSent = 0;
 
-    bool Enable = false;
-    int Xcount = 0;
-    int Ycount = 0;
+    class Motion *Motion;
 
 };
 

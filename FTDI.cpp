@@ -10,19 +10,12 @@
  *      CONSTRUCTOR                                                       *
  * ====================================================================== */
 
-FTDI_Device::FTDI_Device() {
+FTDI_Device::FTDI_Device(class Motion* M)
+    :Motion(M) {
 
     // === DEFINITIONS =====================================================
 
     device_id = 0;
-    isRunningLoop = false;
-    isRunningX = false;
-    isRunningY = false;
-    isRunningYL = false;
-    isRunningYR = false;
-
-    XloopPeriod = 1e6;          // X loop period (ns) | max X speed @ 5e5
-    YloopPeriod = 5e6;          // Y loop period (ns) | max Y speed @ 2e6
 
 }
 
@@ -200,22 +193,25 @@ void FTDI_Device::sendOutput() {
 
 void FTDI_Device::DataLoop() {
 
-    isRunningLoop = true;
+    qInfo() << "Starting data loop";
 
-    qreal tRefX = 0;
-    qreal tRefY = 0;
+    // Define time references
+    qreal tref_x = 0;
+    qreal tref_y = 0;
     QElapsedTimer timer;
     timer.start();
 
+    // Booleans
+    running = true;
     bool send;
-    bool stateX = false;
-    bool stateY = false;
+    bool state_x = false;
+    bool state_y = false;
 
-    while (isRunningLoop) {
+    while (running) {
 
         send = false;
 
-        if (timer.nsecsElapsed()-tRefX >= XloopPeriod) {
+        if (timer.nsecsElapsed()-tref_x >= Motion->loop_period_x) {
 
             // --- Input read
 
@@ -223,13 +219,12 @@ void FTDI_Device::DataLoop() {
             if (NumBytesRead) {
 
                 // Switches
-                if (isRunningX &  (OUT & 0x01) & !(InputBuffer[0] & 0x01)) { isRunningX = false; emit uncheckPad(); }
-                if (isRunningX & !(OUT & 0x01) & !(InputBuffer[0]>>1 & 0x01)) { isRunningX= false; emit uncheckPad(); }
-                if (isRunningY &  (OUT>>2 & 0x01) & (!(InputBuffer[0]>>3 & 0x01) | !(InputBuffer[0]>>5 & 0x01))) { isRunningY = false; emit uncheckPad(); }
-                if (isRunningY & !(OUT>>2 & 0x01) & (!(InputBuffer[0]>>2 & 0x01) | !(InputBuffer[0]>>4 & 0x01))) { isRunningY = false; emit uncheckPad(); }
-
-                // Update user interface
-                emit inputRead(InputBuffer[0]);
+                if (Motion->is_running_x &  (OUT & 0x01) & !(InputBuffer[0] & 0x01))        { emit switchTriggered(SWITCH_XL); }
+                if (Motion->is_running_x & !(OUT & 0x01) & !(InputBuffer[0]>>1 & 0x01))     { emit switchTriggered(SWITCH_XR); }
+                if (Motion->is_running_y & !(OUT>>2 & 0x01) & !(InputBuffer[0]>>2 & 0x01))  { emit switchTriggered(SWITCH_YLF); }
+                if (Motion->is_running_y &  (OUT>>2 & 0x01) & !(InputBuffer[0]>>3 & 0x01))  { emit switchTriggered(SWITCH_YLR); }
+                if (Motion->is_running_y & !(OUT>>2 & 0x01) & !(InputBuffer[0]>>4 & 0x01))  { emit switchTriggered(SWITCH_YRF); }
+                if (Motion->is_running_y &  (OUT>>2 & 0x01) & !(InputBuffer[0]>>5 & 0x01))  { emit switchTriggered(SWITCH_YRR); }
 
             }
 
@@ -238,35 +233,35 @@ void FTDI_Device::DataLoop() {
 
             // --- Motor output
 
-            if (isRunningX)  {
-                setPin(1, stateX);
-                stateX = !stateX;
-                if (stateX) {
-                    if (OUT & 0x01) { Xcount++; } else { Xcount--; }
-                    emit updateCount(Xcount, Ycount);
+            if (Motion->is_running_x)  {
+                setPin(1, state_x);
+                state_x = !state_x;
+                if (state_x) {
+                    if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
+                    emit Motion->updatePosition();
                 }
             }
 
-            tRefX += XloopPeriod;
+            tref_x += Motion->loop_period_x;
             send = true;
 
         }
 
-        if (timer.nsecsElapsed()-tRefY >= YloopPeriod) {
+        if (timer.nsecsElapsed()-tref_y >= Motion->loop_period_y) {
 
             // --- Motor output
 
-            if (isRunningY) {
-                setPin(3, stateY);
-                setPin(5, stateY);
-                stateY = !stateY;
-                if (stateY) {
-                    if (OUT>>2 & 0x01) { Ycount++; } else { Ycount--; }
-                    emit updateCount(Xcount, Ycount);
+            if (Motion->is_running_y) {
+                setPin(3, state_y);
+                setPin(5, state_y);
+                state_y = !state_y;
+                if (state_y) {
+                    if (OUT>>2 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
+                    emit Motion->updatePosition();
                 }
             }
 
-            tRefY += YloopPeriod;
+            tref_y += Motion->loop_period_y;
             send = true;
 
         }
@@ -274,11 +269,11 @@ void FTDI_Device::DataLoop() {
         if (send) {
 
             // Enable state
-            if (Enable != isRunningX || isRunningY) {
-                Enable = isRunningX || isRunningY;
-                emit enableState(Enable);
+            if (Motion->motion_state != Motion->is_running_x || Motion->is_running_y) {
+                Motion->motion_state = Motion->is_running_x || Motion->is_running_y;
+                emit Motion->updateMotionState();
             }
-            setPin(7, !Enable);
+            setPin(7, !Motion->motion_state);
 
             sendOutput();
         }
@@ -319,14 +314,6 @@ QString FTDI_Device::strOutputBuffer() {
         str += QString("%1").arg(OutputBuffer[i]);
     }
     return str;
-}
-
-void FTDI_Device::resetCounts() {
-
-    Xcount = 0;
-    Ycount = 0;
-    emit updateCount(Xcount, Ycount);
-
 }
 
 /* ====================================================================== *

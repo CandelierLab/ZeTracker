@@ -13,7 +13,6 @@
 // #include "Vision.h"
 // #include "Interface.h"
 
-
 namespace Ui { class MainWindow; }
 
 class MainWindow : public QMainWindow {
@@ -30,7 +29,8 @@ signals:
 public slots:
 
     // --- Motion
-    void setMotionState(bool);
+    void updateMotionState();
+    void updatePosition();
 
     // --- Vision
 
