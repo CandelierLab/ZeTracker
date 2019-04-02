@@ -40,13 +40,15 @@ void Motion::initFTDI() {
     // -------------------------------------
 
     FTDI = new FTDI_Device(this);
+    qInfo() << TITLE_2 << "Motion";
 
     unsigned int status = FTDI->openDevice();
 
     switch (status) {
     case 0:
 
-        qInfo() << "FTDI Device" << FTDI->device_id << "successfully opened";
+        // --- Display info
+        qInfo().noquote() << FTDI->strDeviceDescription() << "opened";
 
         // --- Thread management
         tFTDI = new QThread();
@@ -108,50 +110,14 @@ void Motion::Move(bool b) {
 
 void Motion::Pointer(bool b) {
 
-//    FTDI->setPin(6, b);
-//    FTDI->sendOutput();
+    FTDI->setPin(6, b);
+    FTDI->sendOutput();
 
 }
 
 /* ====================================================================== *
  *      INPUT                                                             *
  * ====================================================================== */
-
-/*
-void Motion::setPad(int dir, bool b) {
-
-    if (b) {
-
-        switch (dir) {
-            case PAD_DL: pad |= 0x01; break;
-            case PAD_D:  pad |= 0x02; break;
-            case PAD_DR: pad |= 0x04; break;
-            case PAD_L:  pad |= 0x08; break;
-            case PAD_R:  pad |= 0x10; break;
-            case PAD_UL: pad |= 0x20; break;
-            case PAD_U:  pad |= 0x40; break;
-            case PAD_UR: pad |= 0x80; break;
-        }
-
-    } else {
-
-        switch (dir) {
-            case PAD_DL: pad &= 0xFE; break;
-            case PAD_D:  pad &= 0xFD; break;
-            case PAD_DR: pad &= 0xFB; break;
-            case PAD_L:  pad &= 0xF7; break;
-            case PAD_R:  pad &= 0xEF; break;
-            case PAD_UL: pad &= 0xDF; break;
-            case PAD_U:  pad &= 0xBF; break;
-            case PAD_UR: pad &= 0x7F; break;
-        }
-
-    }
-
-    emit newPadState(pad);
-
-}
-*/
 
 void Motion::switchTriggered(int SW) {
 

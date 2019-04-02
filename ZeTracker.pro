@@ -29,13 +29,17 @@ SOURCES += \
         mainwindow.cpp \
     Motion.cpp \
     MsgHandler.cpp \
-    FTDI.cpp
+    FTDI.cpp \
+    Vision.cpp \
+    FLIR.cpp
 
 HEADERS += \
         mainwindow.h \
     Motion.h \
     MsgHandler.h \
-    FTDI.h
+    FTDI.h \
+    Vision.h \
+    FLIR.h
 
 FORMS += \
         mainwindow.ui

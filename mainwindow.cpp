@@ -22,12 +22,14 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- Messages
     MsgHandle = new MsgHandler(ui->INFOS);
 
-    //qInfo() << THREAD << "Main process lives in thread " << ;
+    qInfo() << THREAD << "Main lives in thread: " << QThread::currentThreadId();
+    qInfo() << TITLE_1 << "Initialization";
 
     // --- Motion
     Motion = new class Motion();
 
     // --- Vision
+    Vision = new class Vision();
 
     // === INITIALIZATIONS =================================================
 
@@ -39,7 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(sExit, SIGNAL(activated()), QApplication::instance(), SLOT(quit()));
 
     // --- Menu
-    // connect(ui->actionScanJoystick, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
+    connect(ui->SCAN_CONTROLLER, SIGNAL(triggered(bool)), Motion, SLOT(initFTDI()));
+    // connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
 
     // --- Motion -------------------------------
 
@@ -61,9 +64,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Motion, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
 
     // Pointer
-    //        connect(ui->Pointer,  SIGNAL(toggled(bool)), this, SLOT(Pointer(bool)));
+    connect(ui->POINTER, SIGNAL(toggled(bool)), Motion, SLOT(Pointer(bool)));
 
-    // --- Visions ------------------------------
+    // --- Vision -------------------------------
 
 }
 
@@ -71,7 +74,6 @@ MainWindow::MainWindow(QWidget *parent) :
  *      DEVICES MANAGEMENT                                                *
  * ====================================================================== */
 
-// void MainWindow::ScanController() { FTDI->ScanDevices(); }
 
 /* ====================================================================== *
  *      MOTION                                                            *
@@ -81,10 +83,10 @@ void MainWindow::updateMotionState() {
 
     if (Motion->motion_state) {
         ui->MOTION_STATE->setText(QString("ENABLED"));
-        ui->MOTION_STATE->setStyleSheet(QString("background:#99ff99;"));
+        ui->MOTION_STATE->setStyleSheet(QString("background: #abebc6;"));
     } else {
         ui->MOTION_STATE->setText(QString("DISABLED"));
-        ui->MOTION_STATE->setStyleSheet(QString("background:#ff5050;"));
+        ui->MOTION_STATE->setStyleSheet(QString("background: #ddd;"));
     }
 
 }

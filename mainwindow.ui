@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QLabel" name="IMAGE_1">
     <property name="geometry">
@@ -292,7 +295,7 @@ p, li { white-space: pre-wrap; }
      <item row="0" column="0" colspan="2">
       <widget class="QLabel" name="MOTION_STATE">
        <property name="styleSheet">
-        <string notr="true">background:#ff5050;</string>
+        <string notr="true">background: #ddd;</string>
        </property>
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
@@ -503,6 +506,51 @@ p, li { white-space: pre-wrap; }
      </item>
     </layout>
    </widget>
+   <widget class="QWidget" name="gridLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>300</y>
+      <width>161</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QLabel" name="LABEL_EXPOSURE">
+       <property name="text">
+        <string>Exposure</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="EXPOSURE">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background: #ddd;</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="EXPOSURE_UNIT">
+       <property name="text">
+        <string>ms</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
    <zorder>DECO_VISION</zorder>
    <zorder>DECO_MOTION</zorder>
    <zorder>IMAGE_1</zorder>
@@ -515,6 +563,7 @@ p, li { white-space: pre-wrap; }
    <zorder>gridLayoutWidget</zorder>
    <zorder>formLayoutWidget</zorder>
    <zorder>gridLayoutWidget_2</zorder>
+   <zorder>gridLayoutWidget_3</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -529,18 +578,18 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Devices</string>
     </property>
-    <addaction name="actionScan_controller"/>
-    <addaction name="actionScan_Joystick"/>
+    <addaction name="SCAN_CONTROLLER"/>
+    <addaction name="SCAN_JOYSTICK"/>
    </widget>
    <addaction name="menuDevices"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionScan_controller">
+  <action name="SCAN_CONTROLLER">
    <property name="text">
     <string>Scan controller</string>
    </property>
   </action>
-  <action name="actionScan_Joystick">
+  <action name="SCAN_JOYSTICK">
    <property name="text">
     <string>Scan Joystick</string>
    </property>

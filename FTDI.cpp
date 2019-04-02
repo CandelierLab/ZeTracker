@@ -193,6 +193,7 @@ void FTDI_Device::sendOutput() {
 
 void FTDI_Device::DataLoop() {
 
+    qInfo().nospace() << THREAD << "[Dev" << device_id << "] loop thread: " << QThread::currentThreadId();
     qInfo() << "Starting data loop";
 
     // Define time references

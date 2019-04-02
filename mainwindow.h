@@ -10,7 +10,7 @@
 
 #include "MsgHandler.h"
 #include "Motion.h"
-// #include "Vision.h"
+#include "Vision.h"
 // #include "Interface.h"
 
 namespace Ui { class MainWindow; }
@@ -42,6 +42,7 @@ private:
     MsgHandler *MsgHandle;
 
     class Motion *Motion;
+    class Vision *Vision;
 
 };
 
