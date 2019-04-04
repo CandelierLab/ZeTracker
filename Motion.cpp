@@ -9,11 +9,15 @@ Motion::Motion() {
     // === DEFINITIONS =====================================================
 
     loop_period_x = 1e6;        // Y loop period (ns) | max X speed @ 5e5
-    loop_period_y = 5e6;        // Y loop period (ns) | max Y speed @ 2e6
+    loop_period_y = 5e5;        // Y loop period (ns) | max Y speed @ 5e5
 
     is_running_x = false;
     is_running_y = false;
     motion_state = false;
+
+    R.tau = 5e9;
+    R.tref_x = 0;
+    R.tref_y = 0;
 
     count_x = 0;
     count_y = 0;
@@ -84,6 +88,16 @@ void Motion::initFTDI() {
 
 void Motion::Move(bool b) {
 
+    // Ramp
+    if (b) {
+//        R.tref_x = timer.nsecsElapsed();
+//        R.tref_y = timer.nsecsElapsed();
+    } else {
+        R.tref_x = 0;
+        R.tref_y = 0;
+    }
+
+    // Motion
     if (QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_L" || QObject::sender()->objectName()=="MOVE_UL") {
         FTDI->setPin(0, true);
         is_running_x = b;

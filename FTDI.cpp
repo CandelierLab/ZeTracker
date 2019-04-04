@@ -198,10 +198,12 @@ void FTDI_Device::DataLoop() {
     qInfo() << "Starting data loop";
 
     // Define time references
-    qreal tref_x = 0;
-    qreal tref_y = 0;
-    QElapsedTimer timer;
-    timer.start();
+    long int now;
+    long int dtx;
+    long int dty;
+    long int tref_x = 0;
+    long int tref_y = 0;
+    Motion->timer.start();
 
     // Booleans
     running = true;
@@ -213,7 +215,14 @@ void FTDI_Device::DataLoop() {
 
         send = false;
 
-        if (timer.nsecsElapsed()-tref_x >= Motion->loop_period_x) {
+        now = Motion->timer.nsecsElapsed();
+        dtx = Motion->R.tref_x ? max(long(Motion->R.tau/double(now-Motion->R.tref_x)*Motion->loop_period_x), Motion->loop_period_x) : Motion->loop_period_x;
+        dty = Motion->R.tref_y ? max(long(Motion->R.tau/double(now-Motion->R.tref_y)*Motion->loop_period_y), Motion->loop_period_x) : Motion->loop_period_y;
+
+        if (now-tref_x >= dtx) {
+
+            Motion->period_x = now - tref_x;
+            emit Motion->updatePeriods();
 
             // --- Input read
 
@@ -240,6 +249,7 @@ void FTDI_Device::DataLoop() {
                 state_x = !state_x;
                 if (state_x) {
                     if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
+                    // Motion->is_running_x = false;
                     emit Motion->updatePosition();
                 }
             }
@@ -249,7 +259,10 @@ void FTDI_Device::DataLoop() {
 
         }
 
-        if (timer.nsecsElapsed()-tref_y >= Motion->loop_period_y) {
+        if (now-tref_y >= dty) {
+
+            Motion->period_y = now - tref_y;
+            emit Motion->updatePeriods();
 
             // --- Motor output
 
@@ -259,6 +272,7 @@ void FTDI_Device::DataLoop() {
                 state_y = !state_y;
                 if (state_y) {
                     if (OUT>>2 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
+                    // Motion->is_running_y = false;
                     emit Motion->updatePosition();
                 }
             }
@@ -275,6 +289,7 @@ void FTDI_Device::DataLoop() {
                 Motion->motion_state = Motion->is_running_x || Motion->is_running_y;
                 emit Motion->updateMotionState();
             }
+
             setPin(7, !Motion->motion_state);
 
             sendOutput();

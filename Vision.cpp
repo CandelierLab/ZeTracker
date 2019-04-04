@@ -11,6 +11,8 @@ Vision::Vision() {
     // Custom types registation
     qRegisterMetaType<Frame>();
 
+    process = false;
+
     // Times
     exposure = 5000;
     period_display = 40e6;   // 25Hz
@@ -48,6 +50,8 @@ void Vision::startCamera() {
     camera->offsetY = 0;
     camera->width = 512;
     camera->height = 512;
+    width = 256;
+    height = 256;
 
     // Change camera thread
     tcam = new QThread;
@@ -80,8 +84,6 @@ void Vision::stopCamera() {
 
 void Vision::processFrame(Frame F) {
 
-    long int tref_process = timer.nsecsElapsed();
-
     // --- Compute FPS -----------------------------------------------------
 
     timestamps.push_back(F.timestamp);
@@ -110,18 +112,29 @@ void Vision::processFrame(Frame F) {
     // --- Process ---------------------------------------------------------
 
     UMat BW;
+    Ellipse E;
 
-    if (is_background) {
+    if (process) {
 
-        absdiff(F.img, Background, BW);
-        // cv::threshold(BW, BW, threshold*255, 255, cv::THRESH_BINARY);
+        long int tref_process = timer.nsecsElapsed();
 
-        // Close object
-        //morphologyEx(BW, BW, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(10,10)));
+        if (is_background) {
+
+            absdiff(F.img, Background, BW);
+            cv::threshold(BW, BW, threshold*255, 255, cv::THRESH_BINARY);
+
+            // Close object
+            morphologyEx(BW, BW, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(7,7)));
+
+            // Compute ellipse
+            E = getEllipse(BW);
+
+
+        }
+
+        process_time = timer.nsecsElapsed() - tref_process;
 
     }
-
-    process_time = timer.nsecsElapsed() - tref_process;
 
     // --- Update display --------------------------------------------------
 
@@ -129,21 +142,20 @@ void Vision::processFrame(Frame F) {
 
         QVector<UMat> display;
         display.push_back(F.img);
-/*
-        if (is_background) {
 
-            // Compute ellipse
-            Ellipse E = getEllipse(BW);
+        if (process && is_background) {
+
+            display.push_back(BW);
 
             // Display ellipse
             UMat Res(BW.size(), CV_8UC3);
             cvtColor(BW, Res, COLOR_GRAY2RGB);
-            ellipse(Res, Point(E.x,E.y), Size(E.major_length, E.minor_length), E.theta*180/M_PI, 0, 360, Scalar(255,0,0), 2);
+            ellipse(Res, Point(E.x,E.y), Size(E.major_length, E.minor_length), E.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
 
-            display.push_back(Res);
+            // display.push_back(Res);
 
         }
-/**/
+
         emit updateDisplay(display);
         emit updateProcessTime();
         tref_display += period_display;

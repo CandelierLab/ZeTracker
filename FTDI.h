@@ -11,10 +11,8 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QMessageBox>
 #include <QVector>
 #include <QThread>
-#include <QElapsedTimer>
 #include <QtMath>
 #include <QDebug>
 

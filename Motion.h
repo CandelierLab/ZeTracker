@@ -18,8 +18,16 @@
 
 #include <QObject>
 #include <QThread>
+#include <QElapsedTimer>
 
 #include "FTDI.h"
+
+struct Ramp {
+    double tau;
+    long int tref_x;
+    long int tref_y;
+};
+
 
 // Forward declaration
 class FTDI_Device;
@@ -40,13 +48,17 @@ public:
     ~Motion();
 
     // Timing
+    QElapsedTimer timer;
     long int loop_period_x;
     long int loop_period_y;
+    long int period_x;
+    long int period_y;
 
-    // Motion state
+    // Motion
     bool is_running_x;
     bool is_running_y;
     bool motion_state;
+    Ramp R;
 
     // Positions
     int count_x;
@@ -58,6 +70,7 @@ public:
 
 signals:
 
+    void updatePeriods();
     void updateMotionState();
     void updatePosition();
     void setPad(unsigned char);

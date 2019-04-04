@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QElapsedTimer>
 
+#include "opencv2/opencv.hpp"
 #include "FLIR.h"
 
 using namespace cv;
@@ -37,6 +38,10 @@ public:
 
     int exposure;
     double fps;
+    int width;
+    int height;
+
+    bool process;
     long int process_time;
     bool save_background;
     double threshold;

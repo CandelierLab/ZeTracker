@@ -29,6 +29,7 @@ signals:
 public slots:
 
     // --- Motion
+    void updatePeriods();
     void updateMotionState();
     void updatePosition();
 
@@ -37,8 +38,11 @@ public slots:
     void updateFPS();
     void updateProcessTime();
     void updateDisplay(QVector<UMat>);
+
+    void processFrames(int);
     void saveBackground();
     void setThreshold();
+
 
 private:
 

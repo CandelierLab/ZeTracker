@@ -221,9 +221,14 @@ void Camera_FLIR::grab() {
 
         } else {
 
-            // --- Get image and convert to QImage
+            // --- Get image
             unsigned char* Raw = (unsigned char*)pImg->GetData();
             Mat M(height, width, CV_8UC1, Raw);
+
+            // Binning to 256x256
+            resize(M, M, Size(), 0.5, 0.5, INTER_AREA);
+            transpose(M,M);
+            flip(M,M,1);
 
             Frame F;
             F.img = M.getUMat(ACCESS_RW);
