@@ -33,6 +33,12 @@ public slots:
     void updatePosition();
 
     // --- Vision
+    void updateExposure();
+    void updateFPS();
+    void updateProcessTime();
+    void updateDisplay(QVector<UMat>);
+    void saveBackground();
+    void setThreshold();
 
 private:
 

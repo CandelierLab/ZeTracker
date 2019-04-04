@@ -8,14 +8,14 @@ p {
   font-size: 12px;
   font-weight: bold;
   margin: 7px 5px;
-  color: #135ea5;
+  color: #006;
 }
 
 .title2 {
   font-size: 11px;
   font-weight: bold;
   margin: 7px 5px;
-  color: #555;
+  color: black;
 }
 
 .thread {
@@ -34,4 +34,15 @@ p {
 .fatal {
   color: black;
   font-weight: bold;
+}
+
+.cameraInfo td {
+	background-color: #F5F5F5;
+	padding: 3px 5px;
+}
+
+.cameraInfo th {
+	background-color: #DDD;
+	vertical-align: middle;
+	padding: 0 5px;
 }

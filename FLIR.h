@@ -48,8 +48,8 @@ public:
     double frameRate;
     int64_t offsetX;
     int64_t offsetY;
-    int64_t width;
-    int64_t height;
+    int width;
+    int height;
 
     bool grabState;
 
@@ -61,7 +61,6 @@ public slots:
 signals:
 
     void newFrame(Frame);
-    void sendExposure(double);
 
 private:
 

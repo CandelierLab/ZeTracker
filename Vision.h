@@ -1,13 +1,24 @@
 #ifndef VISION_H
 #define VISION_H
 
+#include <QFileInfo>
 #include <QElapsedTimer>
 
 #include "FLIR.h"
 
+using namespace cv;
+
 // Forward declaration
 class Camera_FLIR;
 struct Frame;
+
+struct Ellipse {
+    double x;
+    double y;
+    double theta;
+    double major_length;
+    double minor_length;
+};
 
 /* #############################################################################################
    #                                                                                           #
@@ -26,6 +37,9 @@ public:
 
     int exposure;
     double fps;
+    long int process_time;
+    bool save_background;
+    double threshold;
 
     void startCamera();
     void stopCamera();
@@ -38,7 +52,8 @@ signals:
 
     void updateExposure();
     void updateFPS();
-    void newDisplay(Frame);
+    void updateProcessTime();
+    void updateDisplay(QVector<UMat>);
 
 private:
 
@@ -46,12 +61,19 @@ private:
     Camera_FLIR *camera;
     QThread *tcam;
 
+    // --- Times
     QElapsedTimer timer;
     qint64 period_display;
     qint64 tref_display;
-
     QVector<qint64> timestamps;
 
+    // --- Background
+    const char *background_path;
+    bool is_background;
+    UMat Background;
+
+    // --- Image processing
+    Ellipse getEllipse(const UMat&);
 
 };
 

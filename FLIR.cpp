@@ -74,10 +74,11 @@ void Camera_FLIR::sendInfo() {
 
 void Camera_FLIR::grab() {
 
-  // Thread info
-  qInfo().nospace() << THREAD << qPrintable(camName) << " lives in thread: " << QThread::currentThreadId();
+    // Thread info
+    qInfo().nospace() << THREAD << qPrintable(camName) << " thread: " << QThread::currentThreadId();
+    qInfo() << THREAD << "Priority:" << QThread::currentThread()->priority();
 
-  // --- Camera & nodemaps definitions -----------------------------------
+    // --- Camera & nodemaps definitions -----------------------------------
 
     pCam->Init();
     INodeMap &nodeMap = pCam->GetNodeMap();
@@ -175,11 +176,10 @@ void Camera_FLIR::grab() {
     }
 
     // Apply exposure time
-    qDebug() << Vision->exposure;
     ExposureTime->SetValue(Vision->exposure);
 
     emit Vision->updateExposure();
-    qInfo() << "Exposure time set to " << Vision->exposure/1000 << "ms";
+    qInfo() << "Exposure time set to " << double(Vision->exposure)/1000 << "ms";
 
     // === Framerate ===========================
 /*

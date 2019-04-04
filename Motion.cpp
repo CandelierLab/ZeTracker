@@ -8,7 +8,7 @@ Motion::Motion() {
 
     // === DEFINITIONS =====================================================
 
-    loop_period_x = 5e5;        // Y loop period (ns) | max X speed @ 5e5
+    loop_period_x = 1e6;        // Y loop period (ns) | max X speed @ 5e5
     loop_period_y = 5e6;        // Y loop period (ns) | max Y speed @ 2e6
 
     is_running_x = false;
@@ -26,6 +26,9 @@ Motion::Motion() {
 
     initFTDI();
     pad = 0x00;
+
+    // Wait 1ms to avoid display overlap
+    QThread::msleep(1);
 
 }
 
@@ -58,6 +61,7 @@ void Motion::initFTDI() {
         connect(FTDI, SIGNAL (finished()), FTDI, SLOT (deleteLater()));
         connect(tFTDI, SIGNAL (finished()), tFTDI, SLOT (deleteLater()));
         tFTDI->start();
+        tFTDI->setPriority(QThread::TimeCriticalPriority);
 
         // --- Connections
         connect(FTDI, SIGNAL(switchTriggered(int)), this, SLOT(switchTriggered(int)));

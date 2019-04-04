@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
     MsgHandle = new MsgHandler(ui->INFOS);
 
     qInfo() << THREAD << "Main lives in thread: " << QThread::currentThreadId();
+    QThread::currentThread()->setPriority(QThread::NormalPriority);
+    qInfo() << THREAD << "Priority:" << QThread::currentThread()->priority();
+
     qInfo() << TITLE_1 << "Initialization";
 
     // --- Motion
@@ -33,7 +36,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // === INITIALIZATIONS =================================================
 
+    // --- Vision
 
+    Vision->startCamera();
+    setThreshold();
 
     // === CONNECTIONS =====================================================
 
@@ -67,6 +73,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->POINTER, SIGNAL(toggled(bool)), Motion, SLOT(Pointer(bool)));
 
     // --- Vision -------------------------------
+
+    // Background
+    connect(ui->BACKGROUND, SIGNAL(pressed()), this, SLOT(saveBackground()));
+
+    // Threshold
+    connect(ui->THRESHOLD_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
+
+    // Updates
+    connect(Vision, SIGNAL(updateExposure()), this, SLOT(updateExposure()));
+    connect(Vision, SIGNAL(updateFPS()), this, SLOT(updateFPS()));
+    connect(Vision, SIGNAL(updateProcessTime()), this, SLOT(updateProcessTime()));
+    connect(Vision, SIGNAL(updateDisplay(QVector<UMat>)), this, SLOT(updateDisplay(QVector<UMat>)));
 
 }
 
@@ -111,7 +129,85 @@ void MainWindow::updatePosition() {
  *      VISION                                                            *
  * ====================================================================== */
 
+void MainWindow::updateExposure() {
 
+    ui->EXPOSURE->setText(QString("%1").arg(double(Vision->exposure)/1000));
+
+}
+
+void MainWindow::updateFPS() {
+
+    statusBar()->showMessage(QString::number(Vision->fps, 'f', 2) + QString(" FPS"));
+
+}
+
+void MainWindow::updateProcessTime() {
+
+    ui->PROCESS_TIME->setText(QString("%1").arg(int(double(Vision->process_time)/1e3), 6, 10, QLatin1Char('0')));
+
+}
+
+void MainWindow::updateDisplay(QVector<UMat> D) {
+
+    // --- IMAGE 1
+
+    if (D.size()>0) {
+
+        QImage Img1((uchar*)D.at(0).getMat(ACCESS_READ).data, D.at(0).cols, D.at(0).rows, QImage::Format_Indexed8);
+        for (int i=0 ; i<=255; i++) { Img1.setColor(i, qRgb(i,i,i)); }
+        QPixmap pix1 = QPixmap::fromImage(Img1);
+        ui->IMAGE_1->setPixmap(pix1.scaled(ui->IMAGE_1->width(), ui->IMAGE_1->height(), Qt::KeepAspectRatio));
+
+    }
+
+    // --- IMAGE 2
+
+    if (D.size()>1) {
+
+        QImage Img2((uchar*)D.at(1).getMat(ACCESS_READ).data, D.at(1).cols, D.at(1).rows, QImage::Format_RGB888);
+        // for (int i=0 ; i<=255; i++) { Img2.setColor(i, qRgb(i,i,i)); }
+        QPixmap pix2 = QPixmap::fromImage(Img2);
+        ui->IMAGE_2->setPixmap(pix2.scaled(ui->IMAGE_2->width(), ui->IMAGE_2->height(), Qt::KeepAspectRatio));
+
+    }
+
+    // --- IMAGE 3
+
+    if (D.size()>2) {
+
+        QImage Img3((uchar*)D.at(2).getMat(ACCESS_READ).data, D.at(2).cols, D.at(2).rows, QImage::Format_Indexed8);
+        for (int i=0 ; i<=255; i++) { Img3.setColor(i, qRgb(i,i,i)); }
+        QPixmap pix3 = QPixmap::fromImage(Img3);
+        ui->IMAGE_3->setPixmap(pix3.scaled(ui->IMAGE_3->width(), ui->IMAGE_3->height(), Qt::KeepAspectRatio));
+
+    }
+
+    // --- IMAGE 4
+
+    if (D.size()>3) {
+
+        QImage Img4((uchar*)D.at(3).getMat(ACCESS_READ).data, D.at(3).cols, D.at(3).rows, QImage::Format_Indexed8);
+        for (int i=0 ; i<=255; i++) { Img4.setColor(i, qRgb(i,i,i)); }
+        QPixmap pix4 = QPixmap::fromImage(Img4);
+        ui->IMAGE_4->setPixmap(pix4.scaled(ui->IMAGE_4->width(), ui->IMAGE_4->height(), Qt::KeepAspectRatio));
+
+    }
+
+}
+
+void MainWindow::saveBackground() {
+
+    Vision->save_background = true;
+
+}
+
+
+void MainWindow::setThreshold() {
+
+    ui->THRESHOLD->setText(QString::number(double(ui->THRESHOLD_SLIDER->value())/1000, 'f', 3));
+    Vision->threshold = double(ui->THRESHOLD_SLIDER->value())/1000;
+
+}
 
 /* ====================================================================== *
  *      DESTRUCTOR                                                        *
