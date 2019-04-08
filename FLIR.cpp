@@ -228,7 +228,8 @@ void Camera_FLIR::grab() {
             // Binning to 256x256
             resize(M, M, Size(), 0.5, 0.5, INTER_AREA);
             transpose(M,M);
-            flip(M,M,1);
+            flip(M,M,0);
+            // flip(M,M,1);
 
             Frame F;
             F.img = M.getUMat(ACCESS_RW);

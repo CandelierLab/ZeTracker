@@ -78,6 +78,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // Pointer
     connect(ui->POINTER, SIGNAL(toggled(bool)), Motion, SLOT(Pointer(bool)));
 
+    // Mode
+    connect(ui->MOTION_MODE, SIGNAL(currentIndexChanged(int)), this, SLOT(modeChanged(int)));
+
     // --- Vision -------------------------------
 
     // Process ?
@@ -94,6 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Vision, SIGNAL(updateFPS()), this, SLOT(updateFPS()));
     connect(Vision, SIGNAL(updateProcessTime()), this, SLOT(updateProcessTime()));
     connect(Vision, SIGNAL(updateDisplay(QVector<UMat>)), this, SLOT(updateDisplay(QVector<UMat>)));
+    connect(Vision, SIGNAL(updateDxy()), this, SLOT(updateDxy()));
 
 }
 
@@ -141,6 +145,12 @@ void MainWindow::updatePosition() {
 
 }
 
+void MainWindow::modeChanged(int m) {
+
+    Motion->mode = m;
+
+}
+
 /* ====================================================================== *
  *      VISION                                                            *
  * ====================================================================== */
@@ -180,7 +190,7 @@ void MainWindow::updateDisplay(QVector<UMat> D) {
 
     if (D.size()>1) {
 
-        QImage Img2((uchar*)D.at(1).getMat(ACCESS_READ).data, D.at(1).cols, D.at(1).rows, QImage::Format_Indexed8);
+        QImage Img2((uchar*)D.at(1).getMat(ACCESS_READ).data, D.at(1).cols, D.at(1).rows, QImage::Format_RGB888);
         // for (int i=0 ; i<=255; i++) { Img2.setColor(i, qRgb(i,i,i)); }
         QPixmap pix2 = QPixmap::fromImage(Img2);
         ui->IMAGE_2->setPixmap(pix2.scaled(ui->IMAGE_2->width(), ui->IMAGE_2->height(), Qt::KeepAspectRatio));
@@ -210,6 +220,16 @@ void MainWindow::updateDisplay(QVector<UMat> D) {
     }
 
 }
+
+void MainWindow::updateDxy() {
+
+    Motion->dx = Vision->dx;
+    Motion->dy = Vision->dy;
+    ui->DX->setText(QString::number(Vision->dx, 'f', 3));
+    ui->DY->setText(QString::number(Vision->dy, 'f', 3));
+
+}
+
 
 void MainWindow::processFrames(int b) {
 

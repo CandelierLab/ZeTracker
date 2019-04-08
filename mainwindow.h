@@ -32,12 +32,14 @@ public slots:
     void updatePeriods();
     void updateMotionState();
     void updatePosition();
+    void modeChanged(int);
 
     // --- Vision
     void updateExposure();
     void updateFPS();
     void updateProcessTime();
     void updateDisplay(QVector<UMat>);
+    void updateDxy();
 
     void processFrames(int);
     void saveBackground();

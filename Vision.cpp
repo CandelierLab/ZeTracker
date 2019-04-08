@@ -11,7 +11,7 @@ Vision::Vision() {
     // Custom types registation
     qRegisterMetaType<Frame>();
 
-    process = false;
+    process = true;
 
     // Times
     exposure = 5000;
@@ -112,7 +112,7 @@ void Vision::processFrame(Frame F) {
     // --- Process ---------------------------------------------------------
 
     UMat BW;
-    Ellipse E;
+    UMat Res(F.img.size(), CV_8UC3, 0);
 
     if (process) {
 
@@ -120,16 +120,40 @@ void Vision::processFrame(Frame F) {
 
         if (is_background) {
 
-            absdiff(F.img, Background, BW);
+            // Threshold
+            subtract(Background, F.img, BW);
             cv::threshold(BW, BW, threshold*255, 255, cv::THRESH_BINARY);
 
-            // Close object
-            morphologyEx(BW, BW, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(7,7)));
+            // Get contours
+            vector<vector<Point>> contours;
+            vector<Vec4i> hierarchy;
+            findContours(BW, contours,hierarchy, RETR_EXTERNAL, CHAIN_APPROX_NONE);
 
-            // Compute ellipse
-            E = getEllipse(BW);
+            // Keep only the largest contour
+            BW = UMat(BW.size(), CV_8UC1, 0);
+            int maxid = getMaxAreaContourId(contours);
 
+            if (contours.size() > maxid) {
 
+                outline = contours.at(maxid);
+                drawContours(BW, contours, maxid, Scalar(255), FILLED);
+                drawContours(Res, contours, maxid, Scalar(255, 255, 255), FILLED);
+
+                // Compute body ellipse
+                fish.body = getEllipse(BW);
+
+                // Set the angle to point toward the head
+                setHeadAngle();
+
+                // Get the head and tail ellipses
+                setHeadTail();
+
+                // Get (dx,dy)
+                dx = fish.body.x - width/2;
+                dy = height/2 - fish.body.y;
+                emit updateDxy();
+
+            }
         }
 
         process_time = timer.nsecsElapsed() - tref_process;
@@ -145,14 +169,13 @@ void Vision::processFrame(Frame F) {
 
         if (process && is_background) {
 
-            display.push_back(BW);
-
             // Display ellipse
-            UMat Res(BW.size(), CV_8UC3);
-            cvtColor(BW, Res, COLOR_GRAY2RGB);
-            ellipse(Res, Point(E.x,E.y), Size(E.major_length, E.minor_length), E.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
+            if (!isnan(fish.body.x)) {
+                ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
+                circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
+            }
 
-            // display.push_back(Res);
+            display.push_back(Res);
 
         }
 
@@ -161,12 +184,25 @@ void Vision::processFrame(Frame F) {
         tref_display += period_display;
     }
 
-/**/
 }
 
 /* ====================================================================== *
  *      IMAGE PROCESSING                                                  *
  * ====================================================================== */
+
+int Vision::getMaxAreaContourId(vector<vector<Point>> contours) {
+
+    double maxArea = 0;
+    int maxAreaContourId = -1;
+    for (unsigned long j = 0; j < contours.size(); j++) {
+        double newArea = contourArea(contours.at(j));
+        if (newArea > maxArea) {
+            maxArea = newArea;
+            maxAreaContourId = int(j);
+        }
+    }
+    return maxAreaContourId;
+}
 
 Ellipse Vision::getEllipse(const UMat &Img) {
 
@@ -176,12 +212,8 @@ Ellipse Vision::getEllipse(const UMat &Img) {
     E.x = moment.m10/moment.m00;
     E.y = moment.m01/moment.m00;
 
-    double i = moment.mu20;
-    double j = moment.mu11;
-    double k = moment.mu02;
-
     E.theta = atan((2*moment.mu11)/(moment.mu20-moment.mu02))/2 + (moment.mu20<moment.mu02)*(M_PI/2);
-    E.theta += 2*M_PI*(E.theta<0);
+    // E.theta += 2*M_PI*(E.theta<0);
 
     E.major_length = 2*pow( (((moment.mu20 + moment.mu02) + pow( (moment.mu20 - moment.mu02)*(moment.mu20 - moment.mu02) + 4*moment.mu11*moment.mu11,0.5))*0.5)/moment.m00, 0.5);
     E.minor_length = 2*pow( (((moment.mu20 + moment.mu02) - pow( (moment.mu20 - moment.mu02)*(moment.mu20 - moment.mu02) + 4*moment.mu11*moment.mu11,0.5))*0.5)/moment.m00, 0.5);
@@ -189,3 +221,31 @@ Ellipse Vision::getEllipse(const UMat &Img) {
     return E;
 
 }
+
+void Vision::setHeadAngle() {
+
+    // Check
+    if (!outline.size()) { return; }
+
+    // Compute skewness-like estimator
+    double x, y, sk = 0;
+    for (unsigned int i=0 ; i<outline.size() ; i++) {
+        x = (outline.at(i).x-fish.body.x)*cos(fish.body.theta)  + (outline.at(i).y-fish.body.y)*sin(fish.body.theta);
+        y = (outline.at(i).x-fish.body.x)*sin(-fish.body.theta) + (outline.at(i).y-fish.body.y)*cos(fish.body.theta);
+        sk += pow(x*abs(y), 3);
+    }
+
+    // Angle correction
+    fish.body.theta = M_PI - fish.body.theta + (sk>0 ? M_PI : 0);
+    fish.body.theta -= fish.body.theta>2*M_PI ? 2*M_PI : 0;
+
+    // qDebug() << fish.body.theta*180/M_PI;
+
+}
+
+void Vision::setHeadTail() {
+
+    qDebug() << outline.at(0).x << outline.at(outline.size()-1).x;
+
+}
+

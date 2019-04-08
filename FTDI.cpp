@@ -199,8 +199,6 @@ void FTDI_Device::DataLoop() {
 
     // Define time references
     long int now;
-    long int dtx;
-    long int dty;
     long int tref_x = 0;
     long int tref_y = 0;
     Motion->timer.start();
@@ -216,10 +214,39 @@ void FTDI_Device::DataLoop() {
         send = false;
 
         now = Motion->timer.nsecsElapsed();
-        dtx = Motion->R.tref_x ? max(long(Motion->R.tau/double(now-Motion->R.tref_x)*Motion->loop_period_x), Motion->loop_period_x) : Motion->loop_period_x;
-        dty = Motion->R.tref_y ? max(long(Motion->R.tau/double(now-Motion->R.tref_y)*Motion->loop_period_y), Motion->loop_period_x) : Motion->loop_period_y;
 
-        if (now-tref_x >= dtx) {
+        // --- Mode
+
+        if (Motion->mode) {
+            double dr = sqrt(Motion->dx*Motion->dx + Motion->dy*Motion->dy);
+
+            if (Motion->dx<-10) {
+                setPin(0, false);
+                Motion->is_running_x = true;
+            } else if (Motion->dx>10) {
+                setPin(0, true);
+                Motion->is_running_x = true;
+            } else {
+                Motion->is_running_x = false;
+            }
+
+            if (Motion->dy>10) {
+                setPin(2, false);
+                setPin(4, false);
+                Motion->is_running_y = true;
+            } else if (Motion->dy<-10) {
+                setPin(2, true);
+                setPin(4, true);
+                Motion->is_running_y = true;
+            } else {
+                Motion->is_running_y = false;
+            }
+
+        }
+
+        // --- Loops
+
+        if (now-tref_x >= Motion->loop_period_x) {
 
             Motion->period_x = now - tref_x;
             emit Motion->updatePeriods();
@@ -259,7 +286,7 @@ void FTDI_Device::DataLoop() {
 
         }
 
-        if (now-tref_y >= dty) {
+        if (now-tref_y >= Motion->loop_period_y) {
 
             Motion->period_y = now - tref_y;
             emit Motion->updatePeriods();

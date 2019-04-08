@@ -8,6 +8,7 @@
 #include "FLIR.h"
 
 using namespace cv;
+using namespace std;
 
 // Forward declaration
 class Camera_FLIR;
@@ -20,6 +21,16 @@ struct Ellipse {
     double major_length;
     double minor_length;
 };
+
+struct Fish {
+    Ellipse body;
+    Ellipse head;
+    Ellipse tail;
+    double xc;
+    double yc;
+    double curvature;
+};
+
 
 /* #############################################################################################
    #                                                                                           #
@@ -45,6 +56,8 @@ public:
     long int process_time;
     bool save_background;
     double threshold;
+    double dx;
+    double dy;
 
     void startCamera();
     void stopCamera();
@@ -59,6 +72,7 @@ signals:
     void updateFPS();
     void updateProcessTime();
     void updateDisplay(QVector<UMat>);
+    void updateDxy();
 
 private:
 
@@ -78,7 +92,12 @@ private:
     UMat Background;
 
     // --- Image processing
+    Fish fish;
+    vector<Point> outline;
+    int getMaxAreaContourId(vector<vector<Point>>);
     Ellipse getEllipse(const UMat&);
+    void setHeadAngle();
+    void setHeadTail();
 
 };
 

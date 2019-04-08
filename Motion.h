@@ -16,18 +16,14 @@
 #define PAD_U   6
 #define PAD_UR  7
 
+#define MODE_MANUAL 0
+#define MODE_AUTO   1
+
 #include <QObject>
 #include <QThread>
 #include <QElapsedTimer>
 
 #include "FTDI.h"
-
-struct Ramp {
-    double tau;
-    long int tref_x;
-    long int tref_y;
-};
-
 
 // Forward declaration
 class FTDI_Device;
@@ -58,7 +54,6 @@ public:
     bool is_running_x;
     bool is_running_y;
     bool motion_state;
-    Ramp R;
 
     // Positions
     int count_x;
@@ -67,6 +62,11 @@ public:
     double pos_y;
     double count2mm_x;
     double count2mm_y;
+
+    // Feedback
+    int mode;
+    double dx;
+    double dy;
 
 signals:
 
