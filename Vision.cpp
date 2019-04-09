@@ -148,6 +148,12 @@ void Vision::processFrame(Frame F) {
                 // Get the head and tail ellipses
                 setHeadTail();
 
+                // Get the head and tail ellipses
+                setCurvature();
+
+                // contours.at(maxid) = outline;
+                // drawContours(Res, contours, maxid, Scalar(255, 255, 255));
+
                 // Get (dx,dy)
                 dx = fish.body.x - width/2;
                 dy = height/2 - fish.body.y;
@@ -171,8 +177,14 @@ void Vision::processFrame(Frame F) {
 
             // Display ellipse
             if (!isnan(fish.body.x)) {
-                ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
-                circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
+                // ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
+                // circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
+
+                ellipse(Res, Point(fish.head.x,fish.head.y), Size(fish.head.major_length, fish.head.minor_length), fish.head.theta*180/M_PI, 0, 360, Scalar(255,0,255), 1);
+                ellipse(Res, Point(fish.tail.x,fish.tail.y), Size(fish.tail.major_length, fish.tail.minor_length), fish.tail.theta*180/M_PI, 0, 360, Scalar(0,255,0), 1);
+
+                circle(Res, Point(fish.xc, fish.yc), 2, Scalar(255,0,0), FILLED);
+                circle(Res, Point(fish.xc, fish.yc), abs(1/fish.curvature), Scalar(255,0,0));
             }
 
             display.push_back(Res);
@@ -245,7 +257,57 @@ void Vision::setHeadAngle() {
 
 void Vision::setHeadTail() {
 
-    qDebug() << outline.at(0).x << outline.at(outline.size()-1).x;
+    // Buffer image size
+    int s = 64;
+
+    // --- Define head and tail contours
+
+    vector<Point> chead;
+    vector<Point> ctail;
+
+    // Minor axis
+    double vx = cos(fish.body.theta);
+    double vy = sin(fish.body.theta);
+    Point p;
+
+    // Compute cross product
+    for (unsigned int i=0 ; i<outline.size() ; i++) {
+        p.x = outline.at(i).x - fish.body.x + s/2;
+        p.y = outline.at(i).y - fish.body.y + s/2;
+        if ((outline.at(i).x - fish.body.x)*vx - (outline.at(i).y - fish.body.y)*vy > 0) { chead.push_back(p); }
+        else { ctail.push_back(p); }
+    }
+
+    // --- Get head and tail ellipses
+
+    vector<vector<Point>> V;
+    V.push_back(chead);
+    V.push_back(ctail);
+
+    UMat Ihead(s, s, CV_8UC1, Scalar(0));
+    drawContours(Ihead, V, 0, Scalar(255), FILLED);
+    fish.head = getEllipse(Ihead);
+    fish.head.x += fish.body.x - s/2;
+    fish.head.y += fish.body.y - s/2;
+
+    UMat Itail(s, s, CV_8UC1, Scalar(0));
+    drawContours(Itail, V, 1, Scalar(255), FILLED);
+    fish.tail = getEllipse(Itail);
+    fish.tail.x += fish.body.x - s/2;
+    fish.tail.y += fish.body.y - s/2;
 
 }
 
+
+void Vision::setCurvature() {
+
+    double hx = sin(fish.head.theta);
+    double hy = -cos(fish.head.theta);
+    double tx = sin(fish.tail.theta);
+    double ty = -cos(fish.tail.theta);
+
+    fish.curvature = (hx*ty - hy*tx)/((fish.head.y - fish.tail.y)*tx - (fish.head.x - fish.tail.x)*ty);
+    fish.xc = fish.head.x + hx/fish.curvature;
+    fish.yc = fish.head.y + hy/fish.curvature;
+
+}

@@ -98,6 +98,7 @@ private:
     Ellipse getEllipse(const UMat&);
     void setHeadAngle();
     void setHeadTail();
+    void setCurvature();
 
 };
 

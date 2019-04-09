@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- User interface
     ui->setupUi(this);
-    this->setWindowTitle("Controller");
+    this->setWindowTitle("ZeTracker");
     move(0,0);
 
     // --- Shortcuts
@@ -194,28 +194,6 @@ void MainWindow::updateDisplay(QVector<UMat> D) {
         // for (int i=0 ; i<=255; i++) { Img2.setColor(i, qRgb(i,i,i)); }
         QPixmap pix2 = QPixmap::fromImage(Img2);
         ui->IMAGE_2->setPixmap(pix2.scaled(ui->IMAGE_2->width(), ui->IMAGE_2->height(), Qt::KeepAspectRatio));
-
-    }
-
-    // --- IMAGE 3
-
-    if (D.size()>2) {
-
-        QImage Img3((uchar*)D.at(2).getMat(ACCESS_READ).data, D.at(2).cols, D.at(2).rows, QImage::Format_RGB888);
-        for (int i=0 ; i<=255; i++) { Img3.setColor(i, qRgb(i,i,i)); }
-        QPixmap pix3 = QPixmap::fromImage(Img3);
-        ui->IMAGE_3->setPixmap(pix3.scaled(ui->IMAGE_3->width(), ui->IMAGE_3->height(), Qt::KeepAspectRatio));
-
-    }
-
-    // --- IMAGE 4
-
-    if (D.size()>3) {
-
-        QImage Img4((uchar*)D.at(3).getMat(ACCESS_READ).data, D.at(3).cols, D.at(3).rows, QImage::Format_Indexed8);
-        for (int i=0 ; i<=255; i++) { Img4.setColor(i, qRgb(i,i,i)); }
-        QPixmap pix4 = QPixmap::fromImage(Img4);
-        ui->IMAGE_4->setPixmap(pix4.scaled(ui->IMAGE_4->width(), ui->IMAGE_4->height(), Qt::KeepAspectRatio));
 
     }
 

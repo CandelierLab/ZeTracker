@@ -20,7 +20,7 @@
    <widget class="QLabel" name="IMAGE_1">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>350</x>
       <y>10</y>
       <width>256</width>
       <height>256</height>
@@ -36,39 +36,7 @@
    <widget class="QLabel" name="IMAGE_2">
     <property name="geometry">
      <rect>
-      <x>270</x>
-      <y>10</y>
-      <width>256</width>
-      <height>256</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="IMAGE_3">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>270</y>
-      <width>256</width>
-      <height>256</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="IMAGE_4">
-    <property name="geometry">
-     <rect>
-      <x>270</x>
+      <x>350</x>
       <y>270</y>
       <width>256</width>
       <height>256</height>
@@ -84,9 +52,9 @@
    <widget class="QLabel" name="DECO_MOTION">
     <property name="geometry">
      <rect>
-      <x>540</x>
-      <y>20</y>
-      <width>691</width>
+      <x>450</x>
+      <y>550</y>
+      <width>411</width>
       <height>241</height>
      </rect>
     </property>
@@ -100,8 +68,8 @@
    <widget class="QLabel" name="TITLE_MOTION">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>10</y>
+      <x>470</x>
+      <y>540</y>
       <width>67</width>
       <height>20</height>
      </rect>
@@ -125,9 +93,9 @@
    <widget class="QLabel" name="DECO_VISION">
     <property name="geometry">
      <rect>
-      <x>540</x>
-      <y>280</y>
-      <width>691</width>
+      <x>620</x>
+      <y>20</y>
+      <width>611</width>
       <height>241</height>
      </rect>
     </property>
@@ -141,9 +109,9 @@
    <widget class="QLabel" name="TITLE_VISION">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>270</y>
-      <width>67</width>
+      <x>640</x>
+      <y>10</y>
+      <width>76</width>
       <height>20</height>
      </rect>
     </property>
@@ -167,9 +135,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>540</y>
+      <y>10</y>
       <width>331</width>
-      <height>431</height>
+      <height>521</height>
      </rect>
     </property>
     <property name="html">
@@ -183,8 +151,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>80</y>
+      <x>470</x>
+      <y>610</y>
       <width>201</width>
       <height>89</height>
      </rect>
@@ -320,8 +288,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="formLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>40</y>
+      <x>470</x>
+      <y>570</y>
       <width>201</width>
       <height>31</height>
      </rect>
@@ -353,8 +321,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>790</x>
-      <y>40</y>
+      <x>710</x>
+      <y>570</y>
       <width>134</width>
       <height>121</height>
      </rect>
@@ -509,9 +477,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget_3">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>300</y>
-      <width>161</width>
+      <x>640</x>
+      <y>40</y>
+      <width>170</width>
       <height>31</height>
      </rect>
     </property>
@@ -554,9 +522,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QPushButton" name="BACKGROUND">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>340</y>
-      <width>161</width>
+      <x>640</x>
+      <y>80</y>
+      <width>170</width>
       <height>25</height>
      </rect>
     </property>
@@ -567,9 +535,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget_4">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>400</y>
-      <width>160</width>
+      <x>640</x>
+      <y>140</y>
+      <width>169</width>
       <height>51</height>
      </rect>
     </property>
@@ -618,8 +586,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QLabel" name="PROCESS_TIME">
     <property name="geometry">
      <rect>
-      <x>1080</x>
-      <y>490</y>
+      <x>940</x>
+      <y>220</y>
       <width>141</width>
       <height>17</height>
      </rect>
@@ -640,8 +608,8 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget_5">
     <property name="geometry">
      <rect>
-      <x>943</x>
-      <y>40</y>
+      <x>480</x>
+      <y>710</y>
       <width>271</width>
       <height>71</height>
      </rect>
@@ -754,9 +722,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QCheckBox" name="PROCESS">
     <property name="geometry">
      <rect>
-      <x>550</x>
-      <y>370</y>
-      <width>92</width>
+      <x>640</x>
+      <y>110</y>
+      <width>101</width>
       <height>23</height>
      </rect>
     </property>
@@ -770,9 +738,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="gridLayoutWidget_6">
     <property name="geometry">
      <rect>
-      <x>794</x>
-      <y>300</y>
-      <width>131</width>
+      <x>884</x>
+      <y>40</y>
+      <width>140</width>
       <height>61</height>
      </rect>
     </property>
@@ -837,12 +805,125 @@ p, li { white-space: pre-wrap; }
      </item>
     </layout>
    </widget>
+   <widget class="QLabel" name="TRAJ_PLOT">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>540</y>
+      <width>430</width>
+      <height>430</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CURVATURE_PLOT">
+    <property name="geometry">
+     <rect>
+      <x>620</x>
+      <y>270</y>
+      <width>611</width>
+      <height>261</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="DECO_RUN">
+    <property name="geometry">
+     <rect>
+      <x>450</x>
+      <y>810</y>
+      <width>781</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="TITLE_RUN">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>800</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background: #eee;</string>
+    </property>
+    <property name="text">
+     <string>Run</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="TITLE_RUN_2">
+    <property name="geometry">
+     <rect>
+      <x>880</x>
+      <y>540</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background: #eee;</string>
+    </property>
+    <property name="text">
+     <string>Interface</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="DECO_Interface">
+    <property name="geometry">
+     <rect>
+      <x>870</x>
+      <y>550</y>
+      <width>361</width>
+      <height>241</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <zorder>DECO_Interface</zorder>
    <zorder>DECO_VISION</zorder>
    <zorder>DECO_MOTION</zorder>
    <zorder>IMAGE_1</zorder>
    <zorder>IMAGE_2</zorder>
-   <zorder>IMAGE_3</zorder>
-   <zorder>IMAGE_4</zorder>
    <zorder>TITLE_MOTION</zorder>
    <zorder>TITLE_VISION</zorder>
    <zorder>INFOS</zorder>
@@ -856,6 +937,11 @@ p, li { white-space: pre-wrap; }
    <zorder>gridLayoutWidget_5</zorder>
    <zorder>PROCESS</zorder>
    <zorder>gridLayoutWidget_6</zorder>
+   <zorder>TRAJ_PLOT</zorder>
+   <zorder>CURVATURE_PLOT</zorder>
+   <zorder>DECO_RUN</zorder>
+   <zorder>TITLE_RUN</zorder>
+   <zorder>TITLE_RUN_2</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
