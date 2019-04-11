@@ -11,16 +11,19 @@ Vision::Vision() {
     // Custom types registation
     qRegisterMetaType<Frame>();
 
-    process = true;
+    // --- Times
 
-    // Times
+    frame = 0;
+    time = 0;
+
     exposure = 5000;
     period_display = 40e6;   // 25Hz
 
     timer.start();
     tref_display = 0;
 
-    // Background
+    // --- Background
+
     background_path = "Background.pgm";
     save_background = false;
 
@@ -29,6 +32,11 @@ Vision::Vision() {
         Background = imread(background_path, IMREAD_GRAYSCALE).getUMat(ACCESS_READ);
         is_background = true;
     } else { is_background = false; }
+
+    // --- Calibration
+
+    calibrate = false;
+    pix2mm = 1;
 
 }
 
@@ -84,6 +92,11 @@ void Vision::stopCamera() {
 
 void Vision::processFrame(Frame F) {
 
+    // --- Times -----------------------------------------------------------
+
+    frame++;
+    time = F.timestamp;
+
     // --- Compute FPS -----------------------------------------------------
 
     timestamps.push_back(F.timestamp);
@@ -111,10 +124,14 @@ void Vision::processFrame(Frame F) {
 
     // --- Process ---------------------------------------------------------
 
+    bool process_OK = (processCalibration || processFish) && is_background;
+
     UMat BW;
     UMat Res(F.img.size(), CV_8UC3, 0);
 
-    if (process) {
+    // --- Calibration
+
+    if (processCalibration) {
 
         long int tref_process = timer.nsecsElapsed();
 
@@ -122,7 +139,52 @@ void Vision::processFrame(Frame F) {
 
             // Threshold
             subtract(Background, F.img, BW);
-            cv::threshold(BW, BW, threshold*255, 255, cv::THRESH_BINARY);
+            cv::threshold(BW, BW, thresholdCalibration*255, 255, cv::THRESH_BINARY);
+
+            // Get contours
+            vector<vector<Point>> contours;
+            vector<Vec4i> hierarchy;
+            findContours(BW, contours,hierarchy, RETR_EXTERNAL, CHAIN_APPROX_NONE);
+
+            // Keep only the largest contour
+            BW = UMat(BW.size(), CV_8UC1, 0);
+            int maxid = getMaxAreaContourId(contours);
+
+            if (contours.size() > maxid) {
+
+                outline = contours.at(maxid);
+                drawContours(Res, contours, maxid, Scalar(255, 255, 255), FILLED);
+
+                if (calibrate) {
+
+                    RotatedRect R =  minAreaRect(outline);
+                    Point2f r[4];
+                    R.points(r);
+                    pix2mm = cross_length*2000/((r[3].x - r[1].x) + (r[0].y - r[2].y));
+
+                    emit updateCalibration();
+                    calibrate = false;
+                }
+
+            } else { process_OK = false; }
+
+        } else { process_OK = false; }
+
+        processTime = timer.nsecsElapsed() - tref_process;
+
+    }
+
+    // --- Fish
+
+    if (processFish) {
+
+        long int tref_process = timer.nsecsElapsed();
+
+        if (is_background) {
+
+            // Threshold
+            subtract(Background, F.img, BW);
+            cv::threshold(BW, BW, thresholdFish*255, 255, cv::THRESH_BINARY);
 
             // Get contours
             vector<vector<Point>> contours;
@@ -148,21 +210,20 @@ void Vision::processFrame(Frame F) {
                 // Get the head and tail ellipses
                 setHeadTail();
 
-                // Get the head and tail ellipses
+                // Get the curvature
                 setCurvature();
 
-                // contours.at(maxid) = outline;
-                // drawContours(Res, contours, maxid, Scalar(255, 255, 255));
-
-                // Get (dx,dy)
+                // Update position
                 dx = fish.body.x - width/2;
                 dy = height/2 - fish.body.y;
-                emit updateDxy();
 
-            }
-        }
+                emit updateFish();
 
-        process_time = timer.nsecsElapsed() - tref_process;
+            } else { process_OK = false; }
+
+        } else { process_OK = false; }
+
+        processTime = timer.nsecsElapsed() - tref_process;
 
     }
 
@@ -173,26 +234,42 @@ void Vision::processFrame(Frame F) {
         QVector<UMat> display;
         display.push_back(F.img);
 
-        if (process && is_background) {
+        if (process_OK) {
 
-            // Display ellipse
-            if (!isnan(fish.body.x)) {
-                // ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
-                // circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
+            if (processCalibration) {
 
-                ellipse(Res, Point(fish.head.x,fish.head.y), Size(fish.head.major_length, fish.head.minor_length), fish.head.theta*180/M_PI, 0, 360, Scalar(255,0,255), 1);
-                ellipse(Res, Point(fish.tail.x,fish.tail.y), Size(fish.tail.major_length, fish.tail.minor_length), fish.tail.theta*180/M_PI, 0, 360, Scalar(0,255,0), 1);
 
-                circle(Res, Point(fish.xc, fish.yc), 2, Scalar(255,0,0), FILLED);
-                circle(Res, Point(fish.xc, fish.yc), abs(1/fish.curvature), Scalar(255,0,0));
+                display.push_back(Res);
+
             }
 
-            display.push_back(Res);
+            if (processFish) {
+
+                // Display ellipse
+                if (!isnan(fish.body.x)) {
+                    // ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
+                    // circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
+
+                    ellipse(Res, Point(fish.head.x,fish.head.y), Size(fish.head.major_length, fish.head.minor_length), fish.head.theta*180/M_PI, 0, 360, Scalar(255,0,255), 1);
+                    ellipse(Res, Point(fish.tail.x,fish.tail.y), Size(fish.tail.major_length, fish.tail.minor_length), fish.tail.theta*180/M_PI, 0, 360, Scalar(0,255,0), 1);
+
+                    circle(Res, Point(fish.xc, fish.yc), 2, Scalar(255,0,0), FILLED);
+                    circle(Res, Point(fish.xc, fish.yc), abs(1/fish.curvature), Scalar(255,0,0));
+                }
+
+                display.push_back(Res);
+                emit updateCurvature();
+            }
+
+            emit updateProcessTime();
+            emit updateProcessStatus(PROCESS_OK);
 
         }
+        else if (!processCalibration && !processFish) { emit updateProcessStatus(PROCESS_INACTIVE); }
+        else if (!is_background) { emit updateProcessStatus(PROCESS_NOBACK); }
+        else { emit updateProcessStatus(PROCESS_FAILED); }
 
         emit updateDisplay(display);
-        emit updateProcessTime();
         tref_display += period_display;
     }
 
@@ -223,10 +300,7 @@ Ellipse Vision::getEllipse(const UMat &Img) {
     Moments moment = moments(Img);
     E.x = moment.m10/moment.m00;
     E.y = moment.m01/moment.m00;
-
     E.theta = atan((2*moment.mu11)/(moment.mu20-moment.mu02))/2 + (moment.mu20<moment.mu02)*(M_PI/2);
-    // E.theta += 2*M_PI*(E.theta<0);
-
     E.major_length = 2*pow( (((moment.mu20 + moment.mu02) + pow( (moment.mu20 - moment.mu02)*(moment.mu20 - moment.mu02) + 4*moment.mu11*moment.mu11,0.5))*0.5)/moment.m00, 0.5);
     E.minor_length = 2*pow( (((moment.mu20 + moment.mu02) - pow( (moment.mu20 - moment.mu02)*(moment.mu20 - moment.mu02) + 4*moment.mu11*moment.mu11,0.5))*0.5)/moment.m00, 0.5);
 
@@ -250,8 +324,6 @@ void Vision::setHeadAngle() {
     // Angle correction
     fish.body.theta = M_PI - fish.body.theta + (sk>0 ? M_PI : 0);
     fish.body.theta -= fish.body.theta>2*M_PI ? 2*M_PI : 0;
-
-    // qDebug() << fish.body.theta*180/M_PI;
 
 }
 
@@ -297,7 +369,6 @@ void Vision::setHeadTail() {
     fish.tail.y += fish.body.y - s/2;
 
 }
-
 
 void Vision::setCurvature() {
 

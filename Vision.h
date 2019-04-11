@@ -1,6 +1,11 @@
 #ifndef VISION_H
 #define VISION_H
 
+#define PROCESS_INACTIVE -1
+#define PROCESS_NOBACK   0
+#define PROCESS_OK       1
+#define PROCESS_FAILED   2
+
 #include <QFileInfo>
 #include <QElapsedTimer>
 
@@ -47,17 +52,28 @@ public:
     Vision();
     ~Vision();
 
+    // Camera
     int exposure;
     double fps;
     int width;
     int height;
 
-    bool process;
-    long int process_time;
+    // Time
+    long int frame;
+    double time;
+
+    // Image processing
     bool save_background;
-    double threshold;
+    bool calibrate;
+    double cross_length;
+    bool processCalibration, processFish;
+    double thresholdCalibration;
+    double thresholdFish;
+    long int processTime;
+    double pix2mm;
     double dx;
     double dy;
+    Fish fish;
 
     void startCamera();
     void stopCamera();
@@ -70,9 +86,12 @@ signals:
 
     void updateExposure();
     void updateFPS();
+    void updateCalibration();
+    void updateProcessStatus(int);
     void updateProcessTime();
     void updateDisplay(QVector<UMat>);
-    void updateDxy();
+    void updateCurvature();
+    void updateFish();
 
 private:
 
@@ -92,7 +111,6 @@ private:
     UMat Background;
 
     // --- Image processing
-    Fish fish;
     vector<Point> outline;
     int getMaxAreaContourId(vector<vector<Point>>);
     Ellipse getEllipse(const UMat&);

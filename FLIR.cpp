@@ -8,7 +8,7 @@ Camera_FLIR::Camera_FLIR(class Vision* V):Vision(V) {
     grabState = false;
 
     // Camera initialization
-    FLIR_system = System::GetInstance();
+    FLIR_system = Spinnaker::System::GetInstance();
     FLIR_camList = FLIR_system->GetCameras();
     unsigned int FLIR_nCam = FLIR_camList.GetSize();
 
@@ -17,10 +17,10 @@ Camera_FLIR::Camera_FLIR(class Vision* V):Vision(V) {
         pCam = FLIR_camList.GetByIndex(0);
 
         // --- Get camera identifier
-        INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
-        CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
+        Spinnaker::GenApi::INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
+        Spinnaker::GenApi::CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
         if (IsAvailable(category) && IsReadable(category)) {
-            FeatureList_t features;
+            Spinnaker::GenApi::FeatureList_t features;
             category->GetFeatures(features);
 
             QRegExp rx(" (\\w+)\-");
@@ -44,12 +44,12 @@ void Camera_FLIR::sendInfo() {
 
     // --- Device info
 
-    INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
-    CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
+    Spinnaker::GenApi::INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
+    Spinnaker::GenApi::CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
 
     if (IsAvailable(category) && IsReadable(category)) {
 
-        FeatureList_t features;
+        Spinnaker::GenApi::FeatureList_t features;
         category->GetFeatures(features);
 
         qInfo().nospace() << "<table class='cameraInfo'>"
@@ -81,14 +81,14 @@ void Camera_FLIR::grab() {
     // --- Camera & nodemaps definitions -----------------------------------
 
     pCam->Init();
-    INodeMap &nodeMap = pCam->GetNodeMap();
+    Spinnaker::GenApi::INodeMap &nodeMap = pCam->GetNodeMap();
     pCam->GainAuto.SetValue(Spinnaker::GainAutoEnums::GainAuto_Off);
 
     // --- Configure ChunkData ---------------------------------------------
 
     // --- Activate chunk mode
 
-    CBooleanPtr ptrChunkModeActive = nodeMap.GetNode("ChunkModeActive");
+    Spinnaker::GenApi::CBooleanPtr ptrChunkModeActive = nodeMap.GetNode("ChunkModeActive");
 
     if (!IsAvailable(ptrChunkModeActive) || !IsWritable(ptrChunkModeActive)) {
         qWarning() << "Unable to activate chunk mode. Aborting.";
@@ -100,10 +100,10 @@ void Camera_FLIR::grab() {
 
     // --- Chunk data types
 
-    NodeList_t entries;
+    Spinnaker::GenApi::NodeList_t entries;
 
     // Retrieve the selector node
-    CEnumerationPtr ptrChunkSelector = nodeMap.GetNode("ChunkSelector");
+    Spinnaker::GenApi::CEnumerationPtr ptrChunkSelector = nodeMap.GetNode("ChunkSelector");
 
     if (!IsAvailable(ptrChunkSelector) || !IsReadable(ptrChunkSelector)) {
         qWarning() << "Unable to retrieve chunk selector. Aborting.";
@@ -116,7 +116,7 @@ void Camera_FLIR::grab() {
     for (unsigned int i = 0; i < entries.size(); i++) {
 
         // Select entry to be enabled
-        CEnumEntryPtr ptrChunkSelectorEntry = entries.at(i);
+        Spinnaker::GenApi::CEnumEntryPtr ptrChunkSelectorEntry = entries.at(i);
 
         // Go to next node if problem occurs
         if (!IsAvailable(ptrChunkSelectorEntry) || !IsReadable(ptrChunkSelectorEntry)) { continue; }
@@ -124,7 +124,7 @@ void Camera_FLIR::grab() {
         ptrChunkSelector->SetIntValue(ptrChunkSelectorEntry->GetValue());
 
         // Retrieve corresponding boolean
-        CBooleanPtr ptrChunkEnable = nodeMap.GetNode("ChunkEnable");
+        Spinnaker::GenApi::CBooleanPtr ptrChunkEnable = nodeMap.GetNode("ChunkEnable");
 
         // Enable the boolean, thus enabling the corresponding chunk data
         if (IsWritable(ptrChunkEnable)) {
@@ -137,14 +137,14 @@ void Camera_FLIR::grab() {
 
     // === Continuous mode ======================
 
-    CEnumerationPtr ptrAcquisitionMode = nodeMap.GetNode("AcquisitionMode");
+    Spinnaker::GenApi::CEnumerationPtr ptrAcquisitionMode = nodeMap.GetNode("AcquisitionMode");
     if (!IsAvailable(ptrAcquisitionMode) || !IsWritable(ptrAcquisitionMode)) {
         qWarning() << "Unable to set acquisition mode to continuous (enum retrieval)";
         return;
     }
 
     // Retrieve entry node from enumeration node
-    CEnumEntryPtr ptrAcquisitionModeContinuous = ptrAcquisitionMode->GetEntryByName("Continuous");
+    Spinnaker::GenApi::CEnumEntryPtr ptrAcquisitionModeContinuous = ptrAcquisitionMode->GetEntryByName("Continuous");
     if (!IsAvailable(ptrAcquisitionModeContinuous) || !IsReadable(ptrAcquisitionModeContinuous)) {
         qWarning() << "Unable to set acquisition mode to continuous (entry retrieval)";
         return;
@@ -161,14 +161,14 @@ void Camera_FLIR::grab() {
     // === Exposure time ========================
 
     // Disable auto exposure
-    CEnumerationPtr exposureAuto = nodeMap.GetNode("ExposureAuto");
+    Spinnaker::GenApi::CEnumerationPtr exposureAuto = nodeMap.GetNode("ExposureAuto");
     exposureAuto->SetIntValue(exposureAuto->GetEntryByName("Off")->GetValue());
 
-    CEnumerationPtr exposureMode = nodeMap.GetNode("ExposureMode");
+    Spinnaker::GenApi::CEnumerationPtr exposureMode = nodeMap.GetNode("ExposureMode");
     exposureMode->SetIntValue(exposureMode->GetEntryByName("Timed")->GetValue());
 
     // Ensure that exposure time does not exceed the maximum
-    CFloatPtr ExposureTime = nodeMap.GetNode("ExposureTime");
+    Spinnaker::GenApi::CFloatPtr ExposureTime = nodeMap.GetNode("ExposureTime");
     const double ExposureMax = ExposureTime->GetMax();
     if (Vision->exposure > ExposureMax) {
         qInfo().nospace() << "Exposure limited by max value (" << ExposureMax/1000 << " ms)";
@@ -191,16 +191,16 @@ void Camera_FLIR::grab() {
 */
     // === Image size ===========================
 
-    CIntegerPtr pWidth = nodeMap.GetNode("Width");
+    Spinnaker::GenApi::CIntegerPtr pWidth = nodeMap.GetNode("Width");
     if (IsAvailable(pWidth) && IsWritable(pWidth)) { pWidth->SetValue(width); }
 
-    CIntegerPtr pHeight = nodeMap.GetNode("Height");
+    Spinnaker::GenApi::CIntegerPtr pHeight = nodeMap.GetNode("Height");
     if (IsAvailable(pHeight) && IsWritable(pHeight)) { pHeight->SetValue(height); }
 
-    CIntegerPtr pOffsetX = nodeMap.GetNode("OffsetX");
+    Spinnaker::GenApi::CIntegerPtr pOffsetX = nodeMap.GetNode("OffsetX");
     if (IsAvailable(pOffsetX) && IsWritable(pOffsetX)) { pOffsetX->SetValue(offsetX); }
 
-    CIntegerPtr pOffsetY = nodeMap.GetNode("OffsetY");
+    Spinnaker::GenApi::CIntegerPtr pOffsetY = nodeMap.GetNode("OffsetY");
     if (IsAvailable(pOffsetY) && IsWritable(pOffsetY)) { pOffsetY->SetValue(offsetY); }
 
     // --- Acquire images --------------------------------------------------
@@ -213,7 +213,7 @@ void Camera_FLIR::grab() {
 
     while (grabState) {
 
-        ImagePtr pImg = pCam->GetNextImage();
+        Spinnaker::ImagePtr pImg = pCam->GetNextImage();
 
         if (pImg->IsIncomplete()) {
 
@@ -235,7 +235,7 @@ void Camera_FLIR::grab() {
             F.img = M.getUMat(ACCESS_RW);
 
             // --- Get ChunkData
-            ChunkData chunkData = pImg->GetChunkData();
+            Spinnaker::ChunkData chunkData = pImg->GetChunkData();
             F.timestamp = timer.nsecsElapsed(); //(qint64) chunkData.GetTimestamp();
             F.frameId = (qint64) chunkData.GetFrameID();
 

@@ -16,8 +16,6 @@
 #include "MsgHandler.h"
 #include "opencv2/opencv.hpp"
 
-using namespace Spinnaker;
-using namespace Spinnaker::GenApi;
 using namespace cv;
 using namespace std;
 
@@ -67,9 +65,9 @@ private:
     class Vision *Vision;
 
     // Internal FLIR properties
-    SystemPtr FLIR_system;
-    CameraList FLIR_camList;
-    CameraPtr pCam;
+    Spinnaker::SystemPtr FLIR_system;
+    Spinnaker::CameraList FLIR_camList;
+    Spinnaker::CameraPtr pCam;
 
     QElapsedTimer timer;
 

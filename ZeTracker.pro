@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = ZeTracker
 TEMPLATE = app
@@ -31,7 +31,9 @@ SOURCES += \
     MsgHandler.cpp \
     FTDI.cpp \
     Vision.cpp \
-    FLIR.cpp
+    FLIR.cpp \
+    qcustomplot.cpp \
+    Interface.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,7 +41,9 @@ HEADERS += \
     MsgHandler.h \
     FTDI.h \
     Vision.h \
-    FLIR.h
+    FLIR.h \
+    qcustomplot.h \
+    Interface.h
 
 FORMS += \
         mainwindow.ui

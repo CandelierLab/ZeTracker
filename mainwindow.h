@@ -11,7 +11,7 @@
 #include "MsgHandler.h"
 #include "Motion.h"
 #include "Vision.h"
-// #include "Interface.h"
+#include "Interface.h"
 
 namespace Ui { class MainWindow; }
 
@@ -24,27 +24,41 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    // Plots
+    int maxLentghCurv;
+    int maxLengthTraj;
+    QVector<double> pTime, pCurv, pX, pY;
+
 signals:
 
 public slots:
 
     // --- Motion
-    void updatePeriods();
+
+    void updatePeriods();    
     void updateMotionState();
     void updatePosition();
     void modeChanged(int);
 
     // --- Vision
+
     void updateExposure();
     void updateFPS();
-    void updateProcessTime();
     void updateDisplay(QVector<UMat>);
     void updateDxy();
+    void updateCurvature();
 
-    void processFrames(int);
+    // --- Image processing
+
     void saveBackground();
-    void setThreshold();
+    void calibrate();
 
+    void setThreshold();
+    void processCalibration(int);
+    void updateCalibration();
+    void processFrames(int);
+    void updateProcessTime();
+    void updateProcessStatus(int);
 
 private:
 
@@ -53,8 +67,12 @@ private:
     QShortcut *sExit;
     MsgHandler *MsgHandle;
 
+    // --- Plots
+    void initPlots();
+
     class Motion *Motion;
     class Vision *Vision;
+    class Interface *Interface;
 
 };
 
