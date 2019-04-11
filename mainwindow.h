@@ -25,7 +25,7 @@ public:
     ~MainWindow();
 
     // Plots
-    int maxLentghCurv;
+    int maxLengthCurv;
     int maxLengthTraj;
     QVector<double> pTime, pCurv, pX, pY;
 
@@ -48,17 +48,22 @@ public slots:
     void updateDxy();
     void updateCurvature();
 
+    // --- Calibration
+
+    void calibrate();
+    void processCalibration(int);
+    void updateCalibration();
+
     // --- Image processing
 
     void saveBackground();
-    void calibrate();
-
     void setThreshold();
-    void processCalibration(int);
-    void updateCalibration();
+    void setMinBoutDelay();
     void processFrames(int);
     void updateProcessTime();
     void updateProcessStatus(int);
+
+    void triggerBout();
 
 private:
 

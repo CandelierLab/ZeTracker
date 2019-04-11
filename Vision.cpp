@@ -226,8 +226,8 @@ void Vision::processFrame(Frame F) {
                 setCurvature();
 
                 // Update position
-                dx = fish.body.x - width/2;
-                dy = height/2 - fish.body.y;
+                dx = (fish.body.x - width/2)*pix2mm;
+                dy = (height/2 - fish.body.y)*pix2mm;
 
                 emit updateFish();
 
@@ -250,7 +250,6 @@ void Vision::processFrame(Frame F) {
 
             if (processCalibration) {
 
-
                 display.push_back(Res);
 
             }
@@ -259,14 +258,19 @@ void Vision::processFrame(Frame F) {
 
                 // Display ellipse
                 if (!isnan(fish.body.x)) {
+
                     // ellipse(Res, Point(fish.body.x,fish.body.y), Size(fish.body.major_length, fish.body.minor_length), -fish.body.theta*180/M_PI, 0, 360, Scalar(255,0,0), 1);
                     // circle(Res, Point(fish.body.x+fish.body.major_length*cos(fish.body.theta), fish.body.y-fish.body.major_length*sin(fish.body.theta)), 2, Scalar(0,255,255));
 
-                    ellipse(Res, Point(fish.head.x,fish.head.y), Size(fish.head.major_length, fish.head.minor_length), fish.head.theta*180/M_PI, 0, 360, Scalar(255,0,255), 1);
-                    ellipse(Res, Point(fish.tail.x,fish.tail.y), Size(fish.tail.major_length, fish.tail.minor_length), fish.tail.theta*180/M_PI, 0, 360, Scalar(0,255,0), 1);
+                    try {
 
-                    circle(Res, Point(fish.xc, fish.yc), 2, Scalar(255,0,0), FILLED);
-                    circle(Res, Point(fish.xc, fish.yc), abs(1/fish.curvature), Scalar(255,0,0));
+                        ellipse(Res, Point(fish.head.x,fish.head.y), Size(fish.head.major_length, fish.head.minor_length), fish.head.theta*180/M_PI, 0, 360, Scalar(255,0,255), 1);
+                        ellipse(Res, Point(fish.tail.x,fish.tail.y), Size(fish.tail.major_length, fish.tail.minor_length), fish.tail.theta*180/M_PI, 0, 360, Scalar(0,255,0), 1);
+
+                        circle(Res, Point(fish.xc, fish.yc), 2, Scalar(255,0,0), FILLED);
+                        circle(Res, Point(fish.xc, fish.yc), abs(1/fish.curvature), Scalar(255,0,0));
+
+                    } catch (...) {}
                 }
 
                 display.push_back(Res);

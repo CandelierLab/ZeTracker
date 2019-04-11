@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Vision
     ui->PIX2MM->setText(QString::number(Vision->pix2mm, 'f', 3));
+    Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toDouble();
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
     Vision->startCamera();
@@ -104,6 +105,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->THRESH_BW_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
     connect(ui->THRESH_CH_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
 
+    // Parameters
+    connect(ui->MIN_BOUT_DELAY, SIGNAL(editingFinished()), this, SLOT(setMinBoutDelay()));
+
     // Updates
     connect(Vision, SIGNAL(updateExposure()), this, SLOT(updateExposure()));
     connect(Vision, SIGNAL(updateFPS()), this, SLOT(updateFPS()));
@@ -119,6 +123,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- Interface ----------------------------
 
     connect(Interface, SIGNAL(updateDxy()), this, SLOT(updateDxy()));
+
+    // --- TEST ---------------------------------
+    connect(ui->TRIGGER_BOUT, SIGNAL(pressed()), this, SLOT(triggerBout()));
 
 }
 
@@ -197,6 +204,12 @@ void MainWindow::setThreshold() {
 
 }
 
+void MainWindow::setMinBoutDelay() {
+
+    Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toDouble();
+
+}
+
 /* --- IMAGE PROCESING -------------------------------------------------- */
 
 void MainWindow::processFrames(int b) {
@@ -271,18 +284,10 @@ void MainWindow::updateDxy() {
 
 void MainWindow::updateCurvature() {
 
-    /*
     ui->PLOT_CURVATURE->graph(0)->setData(pTime, pCurv);
     ui->PLOT_CURVATURE->xAxis->setRange(pTime.first(), max(pTime.last(), 10.));
     ui->PLOT_CURVATURE->replot();
-    */
 
-    /*
-    curvatureChart->removeSeries(curvatureSeries);
-    curvatureSeries->append(Vision->time/1e9, Vision->fish.curvature);
-    curvatureChart->addSeries(curvatureSeries);
-    curvatureChartView->update();
-    */
 }
 
 void MainWindow::updateProcessStatus(int S) {
@@ -346,7 +351,7 @@ void MainWindow::updateProcessStatus(int S) {
 
 void MainWindow::updateProcessTime() {
 
-    ui->PROCESS_TIME->setText(QString("%1").arg(int(double(Vision->processTime)/1e3), 6, 10, QLatin1Char('0')));
+    ui->PROCESS_TIME->setText(QString::number(double(Vision->processTime)*1e-6, 'f', 3));
 
 }
 
@@ -396,7 +401,7 @@ void MainWindow::updateCalibration() {
 
 void MainWindow::initPlots() {
 
-    maxLentghCurv = 2000;
+    maxLengthCurv = 2000;
     maxLengthTraj = 500;
 
     // Create graph
@@ -404,13 +409,22 @@ void MainWindow::initPlots() {
 
     // Labels
     ui->PLOT_CURVATURE->xAxis->setLabel("Time (s)");
-    ui->PLOT_CURVATURE->yAxis->setLabel("Curvature (1/pix)");
+    ui->PLOT_CURVATURE->yAxis->setLabel("Curvature (1/µm)");
 
     // Axis ranges
-    ui->PLOT_CURVATURE->yAxis->setRange(-0.1, 0.1);
+    ui->PLOT_CURVATURE->yAxis->setRange(-1, 1);
 
 }
 
+/* ====================================================================== *
+ *      TEST                                                              *
+ * ====================================================================== */
+
+void MainWindow::triggerBout() {
+
+
+
+}
 
 /* ====================================================================== *
  *      DESTRUCTOR                                                        *

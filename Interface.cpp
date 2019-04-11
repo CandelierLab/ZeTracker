@@ -27,11 +27,16 @@ void Interface::updateFish() {
 
     // Update curvature
     Main->pTime.append(Vision->time*1e-9);
-    Main->pCurv.append(Vision->fish.curvature);
+    Main->pCurv.append(Vision->fish.curvature*1000/Vision->pix2mm);
 
-    while (Main->pTime.size() > Main->maxLentghCurv) {
+    while (Main->pTime.size() > Main->maxLengthCurv) {
         Main->pTime.pop_front();
         Main->pCurv.pop_front();
     }
+
+    // --- Define bout ? ---------------------------------------------------
+
+
+
 
 }

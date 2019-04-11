@@ -74,6 +74,7 @@ public:
     bool saveBackground;
     bool processFish;
     double thresholdFish;
+    double minBoutDelay;
     long int processTime;
     double dx;
     double dy;
