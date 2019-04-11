@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->TARGET_LOOP_Y->setText(QString::number(Motion->loop_period_y));
 
     // --- Vision
-
+    ui->PIX2MM->setText(QString::number(Vision->pix2mm, 'f', 3));
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
     Vision->startCamera();
@@ -182,7 +182,7 @@ void MainWindow::modeChanged(int m) {
 
 void MainWindow::saveBackground() {
 
-    Vision->save_background = true;
+    Vision->saveBackground = true;
 
 }
 
@@ -369,13 +369,22 @@ void MainWindow::processCalibration(int b) {
 
 void MainWindow::calibrate() {
 
-    Vision->cross_length = ui->CROSS_LENGTH->text().toDouble();
+    Vision->crossLength = ui->CROSS_LENGTH->text().toDouble();
     Vision->calibrate = true;
 
 }
 
 void MainWindow::updateCalibration() {
 
+    // Save new calibration
+    QFile file(Vision->calibrationPath);
+    if (file.open(QIODevice::ReadWrite)) {
+        QTextStream F(&file);
+        F << Vision->pix2mm;
+    }
+    file.close();
+
+    // Display calibration coefficient
     ui->PIX2MM->setText(QString::number(Vision->pix2mm, 'f', 3));
 
 }

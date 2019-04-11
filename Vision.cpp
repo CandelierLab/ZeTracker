@@ -24,19 +24,30 @@ Vision::Vision() {
 
     // --- Background
 
-    background_path = "Background.pgm";
-    save_background = false;
-
-    QFileInfo bkg(background_path);
+    saveBackground = false;
+    backgroundPath = "Background.pgm";
+    QFileInfo bkg(backgroundPath);
     if (bkg.exists() && bkg.isFile()) {
-        Background = imread(background_path, IMREAD_GRAYSCALE).getUMat(ACCESS_READ);
-        is_background = true;
-    } else { is_background = false; }
+        Background = imread(backgroundPath, IMREAD_GRAYSCALE).getUMat(ACCESS_READ);
+        isBackground = true;
+    } else { isBackground = false; }
 
     // --- Calibration
 
     calibrate = false;
     pix2mm = 1;
+    calibrationPath = QString("Calibration.txt");
+
+    // Load existing calibration file
+    QFileInfo cal(calibrationPath);
+    if (cal.exists() && cal.isFile()) {
+        QFile file(calibrationPath);
+        if (file.open(QIODevice::ReadWrite)) {
+            QTextStream F(&file);
+            pix2mm = F.readLine().toDouble();
+        }
+        file.close();
+    }
 
 }
 
@@ -108,23 +119,23 @@ void Vision::processFrame(Frame F) {
 
     // --- Save background -------------------------------------------------
 
-    if (save_background) {
+    if (saveBackground) {
 
         // Update backround
         Background = F.img.clone();
-        is_background = true;
+        isBackground = true;
 
         // Update file
-        imwrite(background_path, F.img);
+        imwrite(backgroundPath, F.img);
 
         qInfo() << "Background saved";
-        save_background = false;
+        saveBackground = false;
 
     }
 
     // --- Process ---------------------------------------------------------
 
-    bool process_OK = (processCalibration || processFish) && is_background;
+    bool process_OK = (processCalibration || processFish) && isBackground;
 
     UMat BW;
     UMat Res(F.img.size(), CV_8UC3, 0);
@@ -135,7 +146,7 @@ void Vision::processFrame(Frame F) {
 
         long int tref_process = timer.nsecsElapsed();
 
-        if (is_background) {
+        if (isBackground) {
 
             // Threshold
             subtract(Background, F.img, BW);
@@ -160,7 +171,8 @@ void Vision::processFrame(Frame F) {
                     RotatedRect R =  minAreaRect(outline);
                     Point2f r[4];
                     R.points(r);
-                    pix2mm = cross_length*2000/((r[3].x - r[1].x) + (r[0].y - r[2].y));
+                    pix2mm = crossLength*2000/(sqrt(pow(r[3].x-r[1].x,2) + pow(r[3].y-r[1].y,2)) +
+                            sqrt(pow(r[0].x-r[2].x,2) + pow(r[0].y-r[2].y,2)));
 
                     emit updateCalibration();
                     calibrate = false;
@@ -180,7 +192,7 @@ void Vision::processFrame(Frame F) {
 
         long int tref_process = timer.nsecsElapsed();
 
-        if (is_background) {
+        if (isBackground) {
 
             // Threshold
             subtract(Background, F.img, BW);
@@ -266,7 +278,7 @@ void Vision::processFrame(Frame F) {
 
         }
         else if (!processCalibration && !processFish) { emit updateProcessStatus(PROCESS_INACTIVE); }
-        else if (!is_background) { emit updateProcessStatus(PROCESS_NOBACK); }
+        else if (!isBackground) { emit updateProcessStatus(PROCESS_NOBACK); }
         else { emit updateProcessStatus(PROCESS_FAILED); }
 
         emit updateDisplay(display);

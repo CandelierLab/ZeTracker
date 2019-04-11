@@ -62,15 +62,19 @@ public:
     long int frame;
     double time;
 
-    // Image processing
-    bool save_background;
-    bool calibrate;
-    double cross_length;
-    bool processCalibration, processFish;
+    // Calibration
     double thresholdCalibration;
+    double crossLength;
+    bool calibrate;
+    bool processCalibration;
+    double pix2mm;
+    QString calibrationPath;
+
+    // Image processing
+    bool saveBackground;
+    bool processFish;
     double thresholdFish;
     long int processTime;
-    double pix2mm;
     double dx;
     double dy;
     Fish fish;
@@ -106,8 +110,8 @@ private:
     QVector<qint64> timestamps;
 
     // --- Background
-    const char *background_path;
-    bool is_background;
+    const char *backgroundPath;
+    bool isBackground;
     UMat Background;
 
     // --- Image processing
