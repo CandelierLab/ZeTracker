@@ -246,7 +246,7 @@ void Vision::processFrame(Frame F) {
 
     if (timer.nsecsElapsed() >= trefBout + minBoutDelay && fish.curvature/pix2mm >= thresholdCurvature) {
         emit newBout();
-        trefBout += minBoutDelay;
+        trefBout = timer.nsecsElapsed();
     }
 
     // --- Update display --------------------------------------------------

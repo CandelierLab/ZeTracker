@@ -57,10 +57,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setThreshold();
 
     // --- Runs
+
     isRunning = false;
     setMetas();
     runClock = new QTimer(this);
     runTimer = new QElapsedTimer();
+
+    // --- Connection
+    setData2send();
 
     // === CONNECTIONS =====================================================
 
@@ -133,9 +137,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Interface ----------------------------
 
+    connect(ui->CONNECT, SIGNAL(toggled(bool)), Interface, SLOT(manageConnection(bool)));
+    connect(ui->SEND_RUN_INFO, SIGNAL(pressed()), Interface, SLOT(sendRunInfo()));
+    connect(ui->SEND_POSITIONS, SIGNAL(toggled(bool)), this, SLOT(setData2send()));
+    connect(ui->SEND_BOUTS, SIGNAL(toggled(bool)), this, SLOT(setData2send()));
+
     connect(Interface, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
     connect(Interface, SIGNAL(updateBouts()), this, SLOT(updateBouts()));
-
     connect(ui->NEW_RUN, SIGNAL(pressed()), Interface, SLOT(newRun()));
 
     // --- Runs ---------------------------------
@@ -262,7 +270,7 @@ void MainWindow::setCurvatureThreshold() {
 
 void MainWindow::setMinBoutDelay() {
 
-    Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toDouble();
+    Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toLong()*long(1e6);
 
 }
 
@@ -556,6 +564,7 @@ void MainWindow::setRun(bool b) {
 
     // --- Checks
     if (b && Interface->runPath.isEmpty()) {
+
         ui->RUN->setChecked(false);
         QMessageBox msgBox;
         msgBox.setText("Please create a run folder before starting a run.");
@@ -586,7 +595,9 @@ void MainWindow::setRun(bool b) {
     if (b) {
         runTimer->start();
         runClock->start(1000);
-    } else { runClock->stop(); }
+    } else {
+        //runClock->stop();
+    }
 
     // Interface
     isRunning = b;
@@ -602,6 +613,30 @@ void MainWindow::updateRunTime() {
 
 }
 
+/* ====================================================================== *
+ *      INTERFACE                                                         *
+ * ====================================================================== */
+
+void MainWindow::setConnected() {
+
+    ui->CONNECT->setStyleSheet(QString("background:#099;"));
+    ui->CONNECT->setText(QString("CONNECTED"));
+
+}
+
+void MainWindow::setDisconnected() {
+
+    ui->CONNECT->setStyleSheet(QString(""));
+    ui->CONNECT->setText(QString("Connect"));
+
+}
+
+void MainWindow::setData2send() {
+
+    Interface->sendPositions = ui->SEND_POSITIONS->isChecked();
+    Interface->sendBouts = ui->SEND_BOUTS->isChecked();
+
+}
 
 /* ====================================================================== *
  *      DESTRUCTOR                                                        *

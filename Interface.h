@@ -7,6 +7,7 @@
 #include <QString>
 #include <QDateTime>
 #include <QDir>
+#include <QTcpSocket>
 #include <QDebug>
 
 #include "MsgHandler.h"
@@ -47,6 +48,10 @@ public:
     QString boutsFile;
     QString backgroundFile;
 
+    // --- Connection
+    bool sendPositions;
+    bool sendBouts;
+
 signals:
 
     void updatePosition();
@@ -62,6 +67,9 @@ public slots:
     void newRun();
     void setRun(bool);
 
+    // --- Connection
+    void manageConnection(bool);
+    void sendRunInfo();
 
 
 private:
@@ -69,6 +77,8 @@ private:
     MainWindow *Main;
     class Motion *Motion;
     class Vision *Vision;
+
+    QTcpSocket *conn = nullptr;
 
     QFile *trajectoryFid;
     QFile *boutsFid;

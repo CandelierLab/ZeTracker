@@ -10,6 +10,11 @@ Interface::Interface(MainWindow *MW, class Motion *M, class Vision *V)
 
     // === INITIALIZATION ==================================================
 
+    trajectoryFid = new QFile(trajectoryFile);
+    boutsFid = new QFile(boutsFile);
+
+    conn = new QTcpSocket(this);
+
     version = QString("1.0");
     dataRoot = QString("/home/ljp/Science/ZeBeauty/Data/");
     lastBout.i = 0;
@@ -18,6 +23,9 @@ Interface::Interface(MainWindow *MW, class Motion *M, class Vision *V)
 
     connect(Vision, SIGNAL(updateFish()), this, SLOT(updateFish()));
     connect(Vision, SIGNAL(newBout()), this, SLOT(newBout()));
+
+    connect(conn, SIGNAL(connected()), Main, SLOT(setConnected()));
+    connect(conn, SIGNAL(disconnected()), Main, SLOT(setDisconnected()));
 }
 
 /* ====================================================================== *
@@ -72,6 +80,12 @@ void Interface::newBout() {
     if (Main->isRunning) {
         QTextStream F(boutsFid);
         F << lastBout.i << "\t" << lastBout.t << "\t" << lastBout.x << "\t" << lastBout.y << endl;
+    }
+
+    // --- Send bout
+    if (Main->isRunning && sendBouts && conn->isWritable()) {
+        conn->write("bout");
+        conn->flush();
     }
 
     // --- Update GUI
@@ -155,7 +169,6 @@ void Interface::setRun(bool b) {
     if (b) {
 
         if (Main->metaTrajectory) {
-
             QFileInfo tfile(trajectoryFile);
             if (!tfile.exists()) {
                 trajectoryFid = new QFile(trajectoryFile);
@@ -182,13 +195,31 @@ void Interface::setRun(bool b) {
 
     } else {
 
-        if (Main->metaTrajectory) { trajectoryFid->close(); }
-        if (Main->metaBouts) { boutsFid->close(); }
-
+        if (Main->metaTrajectory && trajectoryFid->isOpen()) { trajectoryFid->close(); }
+        if (Main->metaBouts && boutsFid->isOpen()) { boutsFid->close(); }
     }
 
 }
 
 /* ====================================================================== *
- *      REMOTE                                                            *
+ *      CONNECTION                                                        *
  * ====================================================================== */
+
+void Interface::manageConnection(bool b) {
+
+    if (b) {
+        conn->connectToHost("localhost", 3231);
+    } else {
+        conn->write("quit");
+        conn->flush();
+        conn->close();
+    }
+
+}
+
+void Interface::sendRunInfo() {
+
+    conn->write(("path=" + runPath).toStdString().c_str());
+    conn->flush();
+
+}

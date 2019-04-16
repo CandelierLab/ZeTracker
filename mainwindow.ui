@@ -653,12 +653,12 @@ p, li { white-space: pre-wrap; }
       <x>890</x>
       <y>570</y>
       <width>162</width>
-      <height>83</height>
+      <height>51</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QCheckBox" name="SEND_POS">
+      <widget class="QCheckBox" name="SEND_POSITIONS">
        <property name="text">
         <string>Send positions</string>
        </property>
@@ -668,6 +668,9 @@ p, li { white-space: pre-wrap; }
       <widget class="QCheckBox" name="SEND_BOUTS">
        <property name="text">
         <string>Send bouts</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -985,7 +988,7 @@ p, li { white-space: pre-wrap; }
      <rect>
       <x>890</x>
       <y>700</y>
-      <width>160</width>
+      <width>131</width>
       <height>80</height>
      </rect>
     </property>
@@ -994,6 +997,9 @@ p, li { white-space: pre-wrap; }
       <widget class="QPushButton" name="CONNECT">
        <property name="text">
         <string>Connect</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

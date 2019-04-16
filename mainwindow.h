@@ -93,6 +93,11 @@ public slots:
     void setRun(bool);
     void updateRunTime();
 
+    // --- Interface
+    void setConnected();
+    void setDisconnected();
+    void setData2send();
+
 private:
 
     // --- GUI
