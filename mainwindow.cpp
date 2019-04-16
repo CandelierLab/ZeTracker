@@ -134,7 +134,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- Interface ----------------------------
 
     connect(Interface, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
-    connect(Interface, SIGNAL(updateTraj()), this, SLOT(updateTraj()));
+    connect(Interface, SIGNAL(updateBouts()), this, SLOT(updateBouts()));
 
     connect(ui->NEW_RUN, SIGNAL(pressed()), Interface, SLOT(newRun()));
 
@@ -481,30 +481,27 @@ void MainWindow::updateCurvature() {
 
 }
 
-void MainWindow::updateTraj() {
+void MainWindow::updateBouts() {
 
-    // --- Bouts
+    // --- Plot bouts
 
-    if (Interface->bout.size()) {
+    // Append bout
+    pX.append(Interface->lastBout.x);
+    pY.append(Interface->lastBout.y);
 
-        // Append bout
-        pX.append(Interface->bout.last().x);
-        pY.append(Interface->bout.last().y);
-
-        // Trim if too long
-        while (pX.size() > maxLengthTraj) {
-            pX.pop_front();
-            pY.pop_front();
-        }
-
+    // Trim if too long
+    while (pX.size() > maxLengthTraj) {
+        pX.pop_front();
+        pY.pop_front();
     }
 
-    // --- Plot
-
+    // Plot
     ui->PLOT_TRAJ->graph(0)->setData(pX,pY,true);
     ui->PLOT_TRAJ->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::red, 1), QBrush(Qt::red), 3));
     ui->PLOT_TRAJ->graph(0)->setPen(QPen(QColor(120, 120, 120), 1));
     ui->PLOT_TRAJ->replot();
+
+
 
 }
 

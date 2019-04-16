@@ -82,7 +82,7 @@ public slots:
 
     // --- Plots
     void updateCurvature();
-    void updateTraj();
+    void updateBouts();
 
     // --- Run
     void setMetas();

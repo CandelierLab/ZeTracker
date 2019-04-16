@@ -31,7 +31,7 @@ public:
 
     // --- Fish
     double pos_x, pos_y;        // Absolute positions ( = camera position + relative position)
-    QVector<Bout> bout;
+    Bout lastBout;
 
     // --- Runs
     QString dataRoot;
@@ -46,7 +46,7 @@ public:
 signals:
 
     void updatePosition();
-    void updateTraj();
+    void updateBouts();
 
 public slots:
 
@@ -68,8 +68,6 @@ private:
 
     QFile *trajectoryFid;
     QFile *boutsFid;
-    QTextStream *Ft;
-    QTextStream *Fb;
 
 
 };

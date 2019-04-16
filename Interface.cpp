@@ -49,15 +49,12 @@ void Interface::updateFish() {
 
 void Interface::newBout() {
 
-    Bout B;
-    B.t = Vision->time;
-    B.x = pos_x;
-    B.y = pos_y;
-    bout.append(B);
+    // --- Update GUI
 
-    qDebug() << "Bout at" << B.x << ";" << B.y;
-
-    emit updateTraj();
+    lastBout.t = Vision->time;
+    lastBout.x = pos_x;
+    lastBout.y = pos_y;
+    emit updateBouts();
 
 }
 
@@ -137,18 +134,19 @@ void Interface::setRun(bool b) {
     if (b) {
 
         if (Main->metaTrajectory) {
-            // tra
-
-
+            trajectoryFid = new QFile(trajectoryFile);
+            if (!trajectoryFid->open(QIODevice::ReadWrite)) { qWarning() << "Could not open trajectory file";}
         }
 
+        if (Main->metaBouts) {
+            boutsFid = new QFile(boutsFile);
+            if (!boutsFid->open(QIODevice::ReadWrite)) { qWarning() << "Could not open bouts file";}
+        }
 
     } else {
 
-        if (Main->metaTrajectory) {
-
-
-        }
+        if (Main->metaTrajectory) { trajectoryFid->close(); }
+        if (Main->metaBouts) { boutsFid->close(); }
 
     }
 
