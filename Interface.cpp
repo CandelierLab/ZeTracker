@@ -155,12 +155,22 @@ void Interface::setRun(bool b) {
     if (b) {
 
         if (Main->metaTrajectory) {
-            trajectoryFid = new QFile(trajectoryFile);
-            if (trajectoryFid->open(QIODevice::WriteOnly | QIODevice::Append)) {
-                QDataStream F(trajectoryFid);
-                F << version.toDouble();
-                Main->updateMeta(META_TRAJECTORY, true);
-            } else { qWarning() << "Could not open trajectory file";}
+
+            QFileInfo tfile(trajectoryFile);
+            if (!tfile.exists()) {
+                trajectoryFid = new QFile(trajectoryFile);
+                if (trajectoryFid->open(QIODevice::WriteOnly | QIODevice::Append)) {
+                    QDataStream F(trajectoryFid);
+                    F << version.toDouble();
+                    Main->updateMeta(META_TRAJECTORY, true);
+                } else { qWarning() << "Could not open trajectory file";}
+            } else {
+                Main->setRun(false);
+                QMessageBox msgBox;
+                msgBox.setText("The trajectory file already exists for this run. Please create a new run.");
+                msgBox.exec();
+                return;
+            }
         }
 
         if (Main->metaBouts) {

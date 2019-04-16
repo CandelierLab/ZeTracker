@@ -2,6 +2,8 @@
 #define INTERFACE_H
 
 #include <QMainWindow>
+#include <QFileInfo>
+#include <QMessageBox>
 #include <QString>
 #include <QDateTime>
 #include <QDir>

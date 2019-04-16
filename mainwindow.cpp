@@ -501,7 +501,11 @@ void MainWindow::updateBouts() {
     ui->PLOT_TRAJ->graph(0)->setPen(QPen(QColor(120, 120, 120), 1));
     ui->PLOT_TRAJ->replot();
 
+    // --- Run stats
 
+    if (isRunning) {
+        ui->RUN_NUM_BOUTS->setNum(ui->RUN_NUM_BOUTS->text().toInt()+1);
+    }
 
 }
 
@@ -550,8 +554,6 @@ void MainWindow::openFolder() {
 
 void MainWindow::setRun(bool b) {
 
-    isRunning = b;
-
     // --- Checks
     if (b && Interface->runPath.isEmpty()) {
         ui->RUN->setChecked(false);
@@ -565,9 +567,15 @@ void MainWindow::setRun(bool b) {
 
     // --- GUI appearance
     if (b) {
+
         ui->RUN->setChecked(true);
         ui->RUN->setStyleSheet(QString("Background:#099;"));
         ui->RUN->setText("RUNNING");
+
+        // Reset
+        ui->RUN_TIME->setText(QString("00:00:00"));
+        ui->RUN_NUM_BOUTS->setNum(0);
+
     } else {
         ui->RUN->setChecked(false);
         ui->RUN->setStyleSheet(QString(""));
@@ -578,10 +586,10 @@ void MainWindow::setRun(bool b) {
     if (b) {
         runTimer->start();
         runClock->start(1000);
-        ui->RUN_TIME->setText(QString("00:00:00"));
     } else { runClock->stop(); }
 
     // Interface
+    isRunning = b;
     Interface->setRun(b);
 
 }
@@ -593,6 +601,7 @@ void MainWindow::updateRunTime() {
     ui->RUN_TIME->setText(t.toString("hh:mm:ss"));
 
 }
+
 
 /* ====================================================================== *
  *      DESTRUCTOR                                                        *
