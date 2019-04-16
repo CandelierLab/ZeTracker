@@ -39,6 +39,7 @@ public:
 
     // --- Runs
     bool isRunning;
+    QElapsedTimer *runTimer;
     bool metaLog;
     bool metaParameters;
     bool metaTrajectory;
@@ -113,7 +114,6 @@ private:
     void initPlots();
 
     // --- Runs
-    QElapsedTimer *runTimer;
     QTimer *runClock;
 
 };

@@ -60,7 +60,7 @@ public:
 
     // Time
     long int frame;
-    double time;
+    qint64 time;
 
     // Calibration
     double thresholdCalibration;

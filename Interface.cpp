@@ -12,6 +12,7 @@ Interface::Interface(MainWindow *MW, class Motion *M, class Vision *V)
 
     version = QString("1.0");
     dataRoot = QString("/home/ljp/Science/ZeBeauty/Data/");
+    lastBout.i = 0;
 
     // === CONNECTIONS =====================================================
 
@@ -25,15 +26,16 @@ Interface::Interface(MainWindow *MW, class Motion *M, class Vision *V)
 
 void Interface::updateFish() {
 
-    // --- GUI -------------------------------------------------------------
-
-    // Update position
+    // --- Position
 
     Motion->dx = Vision->dx;
     Motion->dy = Vision->dy;
-
     pos_x = Motion->count_x*Motion->count2mm_x + Vision->dx;
     pos_y = Motion->count_y*Motion->count2mm_y + Vision->dy;
+
+    // --- GUI
+
+    // Update position
     emit updatePosition();
 
     // Update curvature
@@ -45,15 +47,34 @@ void Interface::updateFish() {
         Main->pCurv.pop_front();
     }
 
+    // --- Save Bout
+
+    if (Main->isRunning) {
+        QDataStream F(trajectoryFid);
+        F << Vision->time << double(Motion->count_x) << double(Motion->count_y)
+          << Vision->dx << Vision->dy << pos_x << pos_y << Vision->fish.body.theta
+          << Vision->fish.head.x << Vision->fish.head.y << Vision->fish.head.theta
+          << Vision->fish.tail.x << Vision->fish.tail.y << Vision->fish.tail.theta
+          << Vision->fish.xc << Vision->fish.yc << Vision->fish.curvature;
+    }
+
 }
 
 void Interface::newBout() {
 
-    // --- Update GUI
-
+    // --- Update bout
+    lastBout.i++;
     lastBout.t = Vision->time;
     lastBout.x = pos_x;
     lastBout.y = pos_y;
+
+    // --- Save Bout
+    if (Main->isRunning) {
+        QTextStream F(boutsFid);
+        F << lastBout.i << "\t" << lastBout.t << "\t" << lastBout.x << "\t" << lastBout.y << endl;
+    }
+
+    // --- Update GUI
     emit updateBouts();
 
 }
@@ -124,7 +145,7 @@ void Interface::newRun() {
 
     // --- Trajectories -------------------------
 
-    trajectoryFile = runPath + QString("Trajectory.txt");
+    trajectoryFile = runPath + QString("Trajectory.dat");
     boutsFile = runPath + QString("Bouts.txt");
 
 }
@@ -135,12 +156,18 @@ void Interface::setRun(bool b) {
 
         if (Main->metaTrajectory) {
             trajectoryFid = new QFile(trajectoryFile);
-            if (!trajectoryFid->open(QIODevice::ReadWrite)) { qWarning() << "Could not open trajectory file";}
+            if (trajectoryFid->open(QIODevice::WriteOnly | QIODevice::Append)) {
+                QDataStream F(trajectoryFid);
+                F << version.toDouble();
+                Main->updateMeta(META_TRAJECTORY, true);
+            } else { qWarning() << "Could not open trajectory file";}
         }
 
         if (Main->metaBouts) {
             boutsFid = new QFile(boutsFile);
-            if (!boutsFid->open(QIODevice::ReadWrite)) { qWarning() << "Could not open bouts file";}
+            if (boutsFid->open(QIODevice::WriteOnly | QIODevice::Append)) {
+                Main->updateMeta(META_BOUTS, true);
+            } else { qWarning() << "Could not open bouts file";}
         }
 
     } else {

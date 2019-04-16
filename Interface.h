@@ -2,9 +2,10 @@
 #define INTERFACE_H
 
 #include <QMainWindow>
-#include <QDebug>
+#include <QString>
 #include <QDateTime>
 #include <QDir>
+#include <QDebug>
 
 #include "MsgHandler.h"
 #include "Motion.h"
@@ -14,7 +15,8 @@
 class MainWindow;
 
 struct Bout {
-    double t;
+    int i;
+    qint64 t;
     double x;
     double y;
 };

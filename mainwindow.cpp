@@ -550,6 +550,8 @@ void MainWindow::openFolder() {
 
 void MainWindow::setRun(bool b) {
 
+    isRunning = b;
+
     // --- Checks
     if (b && Interface->runPath.isEmpty()) {
         ui->RUN->setChecked(false);
@@ -563,9 +565,11 @@ void MainWindow::setRun(bool b) {
 
     // --- GUI appearance
     if (b) {
+        ui->RUN->setChecked(true);
         ui->RUN->setStyleSheet(QString("Background:#099;"));
         ui->RUN->setText("RUNNING");
     } else {
+        ui->RUN->setChecked(false);
         ui->RUN->setStyleSheet(QString(""));
         ui->RUN->setText("RUN");
     }
