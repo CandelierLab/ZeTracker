@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QDebug>
+#include <QDateTime>
+#include <QDir>
 
 #include "MsgHandler.h"
 #include "Motion.h"
@@ -10,6 +12,12 @@
 
 // Forward declaration
 class MainWindow;
+
+struct Bout {
+    double t;
+    double x;
+    double y;
+};
 
 class Interface : public QWidget {
 
@@ -19,13 +27,38 @@ public:
 
     explicit Interface(MainWindow*, class Motion*, class Vision*);
 
+    QString version;
+
+    // --- Fish
+    double pos_x, pos_y;        // Absolute positions ( = camera position + relative position)
+    QVector<Bout> bout;
+
+    // --- Runs
+    QString dataRoot;
+    QString runPath;
+
+    QString logFile;
+    QString parametersFile;
+    QString trajectoryFile;
+    QString boutsFile;
+    QString backgroundFile;
+
 signals:
 
-    void updateDxy();
+    void updatePosition();
+    void updateTraj();
 
 public slots:
 
+    // --- Fish
     void updateFish();
+    void newBout();
+
+    // --- Runs
+    void newRun();
+    void setRun(bool);
+
+
 
 private:
 
@@ -33,6 +66,10 @@ private:
     class Motion *Motion;
     class Vision *Vision;
 
+    QFile *trajectoryFid;
+    QFile *boutsFid;
+    QTextStream *Ft;
+    QTextStream *Fb;
 
 
 };

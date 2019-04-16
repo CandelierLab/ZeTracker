@@ -42,17 +42,25 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // === INITIALIZATIONS =================================================
 
-    // --- Motion
-    ui->TARGET_LOOP_X->setText(QString::number(Motion->loop_period_x));
-    ui->TARGET_LOOP_Y->setText(QString::number(Motion->loop_period_y));
+    posBufferSize = 100;
+    ui->VERSION->setText(Interface->version);
 
     // --- Vision
-    ui->PIX2MM->setText(QString::number(Vision->pix2mm, 'f', 3));
-    Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toDouble();
+
+    ui->PIX2MM->setText(QString::number(Vision->pix2mm*1000, 'f', 1));
+    Vision->minBoutDelay = long(ui->MIN_BOUT_DELAY->text().toDouble()*1e6);
+    Vision->thresholdCurvature = ui->THRESH_CURV->text().toDouble();
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
+
     Vision->startCamera();
     setThreshold();
+
+    // --- Runs
+    isRunning = false;
+    setMetas();
+    runClock = new QTimer(this);
+    runTimer = new QElapsedTimer();
 
     // === CONNECTIONS =====================================================
 
@@ -71,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // State
     connect(Motion, SIGNAL(updateMotionState()), this, SLOT(updateMotionState()));
 
-    // Displacement pad
+    // Displacements
     connect(ui->MOVE_UL, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
     connect(ui->MOVE_U,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
     connect(ui->MOVE_UR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
@@ -81,7 +89,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->MOVE_D,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
     connect(ui->MOVE_DR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
 
-    // Reset counts
+    connect(ui->MOVE_XY, SIGNAL(pressed()), this, SLOT(moveFixed()));
+
+    // Position
     connect(ui->RESET_COUNTS, SIGNAL(pressed()), Motion, SLOT(resetCounts()));
     connect(Motion, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
 
@@ -104,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Thresholds
     connect(ui->THRESH_BW_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
     connect(ui->THRESH_CH_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
+    connect(ui->THRESH_CURV, SIGNAL(editingFinished()), this, SLOT(setCurvatureThreshold()));
 
     // Parameters
     connect(ui->MIN_BOUT_DELAY, SIGNAL(editingFinished()), this, SLOT(setMinBoutDelay()));
@@ -113,8 +124,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Vision, SIGNAL(updateFPS()), this, SLOT(updateFPS()));
     connect(Vision, SIGNAL(updateProcessTime()), this, SLOT(updateProcessTime()));
     connect(Vision, SIGNAL(updateDisplay(QVector<UMat>)), this, SLOT(updateDisplay(QVector<UMat>)));
-    connect(Vision, SIGNAL(updateCurvature()), this, SLOT(updateCurvature()));
     connect(Vision, SIGNAL(updateProcessStatus(int)), this, SLOT(updateProcessStatus(int)));
+    connect(Vision, SIGNAL(updateCurvature()), this, SLOT(updateCurvature()));
 
     // Calibration
     connect(ui->CALIBRATE, SIGNAL(pressed()), this, SLOT(calibrate()));
@@ -122,10 +133,27 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Interface ----------------------------
 
-    connect(Interface, SIGNAL(updateDxy()), this, SLOT(updateDxy()));
+    connect(Interface, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
+    connect(Interface, SIGNAL(updateTraj()), this, SLOT(updateTraj()));
+
+    connect(ui->NEW_RUN, SIGNAL(pressed()), Interface, SLOT(newRun()));
+
+    // --- Runs ---------------------------------
+
+    connect(ui->RUN_LOG, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+    connect(ui->RUN_PARAMETERS, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+    connect(ui->RUN_TRAJECTORY, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+    connect(ui->RUN_BOUTS, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+    connect(ui->RUN_BACKGROUND, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+    connect(ui->RUN_IMAGES, SIGNAL(toggled(bool)), this, SLOT(setMetas()));
+
+    connect(ui->OPEN_FOLDER, SIGNAL(pressed()), this, SLOT(openFolder()));
+    connect(ui->RUN, SIGNAL(toggled(bool)), this, SLOT(setRun(bool)));
+    connect(runClock, SIGNAL(timeout()), this, SLOT(updateRunTime()));
 
     // --- TEST ---------------------------------
-    connect(ui->TRIGGER_BOUT, SIGNAL(pressed()), this, SLOT(triggerBout()));
+
+    connect(ui->TRIGGER_BOUT, SIGNAL(pressed()), Interface, SLOT(newBout()));
 
 }
 
@@ -161,23 +189,46 @@ void MainWindow::updateMotionState() {
 
 void MainWindow::updatePosition() {
 
-    // Update positions
-    Motion->pos_x = Motion->count_x*Motion->count2mm_x;
-    Motion->pos_y = Motion->count_y*Motion->count2mm_y;
-
     // Display counts
     ui->COUNT_X->setText(QString("%1").arg(Motion->count_x, 5, 10, QLatin1Char('0')));
     ui->COUNT_Y->setText(QString("%1").arg(Motion->count_y, 5, 10, QLatin1Char('0')));
 
     // Display positions
-    ui->POS_X->setText(QString::number(Motion->pos_x, 'f', 2));
-    ui->POS_Y->setText(QString::number(Motion->pos_y, 'f', 2));
+    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm_x, 'f', 3));
+    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y, 'f', 3));
 
+    dx.append(Vision->dx);
+    dy.append(Vision->dy);
+    while (dx.size() > posBufferSize) { dx.pop_front(); }
+    while (dy.size() > posBufferSize) { dy.pop_front(); }
+    double dx_ = 0;
+    double dy_ = 0;
+    for (int i=0; i<dx.size(); i++) {
+        dx_ += dx.at(i);
+        dy_ += dy.at(i);
+    }
+
+    ui->DX->setText(QString::number(dx_/dx.size(), 'f', 3));
+    ui->DY->setText(QString::number(dy_/dy.size(), 'f', 3));
+
+    // ui->POS_X->setText(QString::number(Interface->pos_x, 'f', 3));
+    // ui->POS_Y->setText(QString::number(Interface->pos_y, 'f', 3));
+
+    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm_x + dx_/dx.size(), 'f', 3));
+    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y + dy_/dy.size(), 'f', 3));
 }
 
 void MainWindow::modeChanged(int m) {
 
     Motion->mode = m;
+
+}
+
+void MainWindow::moveFixed() {
+
+    Motion->target_x = Motion->count_x + ui->MOVE_X->text().toInt();
+    Motion->target_y = Motion->count_y + ui->MOVE_Y->text().toInt();
+    Motion->moveFixed();
 
 }
 
@@ -193,7 +244,6 @@ void MainWindow::saveBackground() {
 
 }
 
-
 void MainWindow::setThreshold() {
 
     ui->THRESH_BW->setText(QString::number(double(ui->THRESH_BW_SLIDER->value())/1000, 'f', 3));
@@ -201,6 +251,12 @@ void MainWindow::setThreshold() {
 
     ui->THRESH_CH->setText(QString::number(double(ui->THRESH_CH_SLIDER->value())/1000, 'f', 3));
     Vision->thresholdCalibration = double(ui->THRESH_CH_SLIDER->value())/1000;
+
+}
+
+void MainWindow::setCurvatureThreshold() {
+
+    Vision->thresholdCurvature = ui->THRESH_CURV->text().toDouble();
 
 }
 
@@ -273,22 +329,6 @@ void MainWindow::updateDisplay(QVector<UMat> D) {
 
 }
 
-void MainWindow::updateDxy() {
-
-    Motion->dx = Vision->dx;
-    Motion->dy = Vision->dy;
-    ui->DX->setText(QString::number(Vision->dx, 'f', 3));
-    ui->DY->setText(QString::number(Vision->dy, 'f', 3));
-
-}
-
-void MainWindow::updateCurvature() {
-
-    ui->PLOT_CURVATURE->graph(0)->setData(pTime, pCurv);
-    ui->PLOT_CURVATURE->xAxis->setRange(pTime.first(), max(pTime.last(), 10.));
-    ui->PLOT_CURVATURE->replot();
-
-}
 
 void MainWindow::updateProcessStatus(int S) {
 
@@ -390,10 +430,9 @@ void MainWindow::updateCalibration() {
     file.close();
 
     // Display calibration coefficient
-    ui->PIX2MM->setText(QString::number(Vision->pix2mm, 'f', 3));
+    ui->PIX2MM->setText(QString::number(Vision->pix2mm*1000, 'f', 1));
 
 }
-
 
 /* ====================================================================== *
  *      PLOTS                                                             *
@@ -404,25 +443,153 @@ void MainWindow::initPlots() {
     maxLengthCurv = 2000;
     maxLengthTraj = 500;
 
+    // === CURVATURE =======================================================
+
     // Create graph
     ui->PLOT_CURVATURE->addGraph();
 
-    // Labels
+    // Labels & box
     ui->PLOT_CURVATURE->xAxis->setLabel("Time (s)");
-    ui->PLOT_CURVATURE->yAxis->setLabel("Curvature (1/µm)");
+    ui->PLOT_CURVATURE->yAxis->setLabel("Curvature (1/mm)");
+    ui->PLOT_CURVATURE->axisRect()->setupFullAxesBox();
 
     // Axis ranges
     ui->PLOT_CURVATURE->yAxis->setRange(-1, 1);
 
+
+    // === TRAJECTORY ======================================================
+
+    // Create graph
+    ui->PLOT_TRAJ->addGraph();
+
+    // Labels & box
+    ui->PLOT_TRAJ->xAxis->setLabel("x (mm)");
+    ui->PLOT_TRAJ->yAxis->setLabel("y (mm)");
+    ui->PLOT_TRAJ->axisRect()->setupFullAxesBox();
+
+    // Axis ranges
+    ui->PLOT_TRAJ->xAxis->setRange(-500, 500);
+    ui->PLOT_TRAJ->yAxis->setRange(-500, 500);
+
+}
+
+void MainWindow::updateCurvature() {
+
+    ui->PLOT_CURVATURE->graph(0)->setData(pTime, pCurv, true);
+    ui->PLOT_CURVATURE->xAxis->setRange(pTime.first(), max(pTime.last(), 10.));
+    ui->PLOT_CURVATURE->replot();
+
+}
+
+void MainWindow::updateTraj() {
+
+    // --- Bouts
+
+    if (Interface->bout.size()) {
+
+        // Append bout
+        pX.append(Interface->bout.last().x);
+        pY.append(Interface->bout.last().y);
+
+        // Trim if too long
+        while (pX.size() > maxLengthTraj) {
+            pX.pop_front();
+            pY.pop_front();
+        }
+
+    }
+
+    // --- Plot
+
+    ui->PLOT_TRAJ->graph(0)->setData(pX,pY,true);
+    ui->PLOT_TRAJ->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::red, 1), QBrush(Qt::red), 3));
+    ui->PLOT_TRAJ->graph(0)->setPen(QPen(QColor(120, 120, 120), 1));
+    ui->PLOT_TRAJ->replot();
+
 }
 
 /* ====================================================================== *
- *      TEST                                                              *
+ *      RUNS                                                              *
  * ====================================================================== */
 
-void MainWindow::triggerBout() {
+void MainWindow::setMetas() {
 
+    metaLog = ui->RUN_LOG->isChecked();
+    metaParameters = ui->RUN_PARAMETERS->isChecked();
+    metaTrajectory = ui->RUN_TRAJECTORY->isChecked();
+    metaBouts = ui->RUN_BOUTS->isChecked();
+    metaBackground = ui->RUN_BACKGROUND->isChecked();
+    metaImages = ui->RUN_IMAGES->isChecked();
 
+}
+
+void MainWindow::updateMeta(int param, bool b) {
+
+    QString done = "font-weight:600; color:darkslategray;";
+    QString base = "";
+
+    switch (param) {
+    case META_LOG:          ui->RUN_LOG->setStyleSheet(b ? done : base); break;
+    case META_PARAMETERS:   ui->RUN_PARAMETERS->setStyleSheet(b ? done : base); break;
+    case META_TRAJECTORY:   ui->RUN_TRAJECTORY->setStyleSheet(b ? done : base); break;
+    case META_BOUTS:        ui->RUN_BOUTS->setStyleSheet(b ? done : base); break;
+    case META_BACKGROUND:   ui->RUN_BACKGROUND->setStyleSheet(b ? done : base); break;
+    case META_IMAGES:       ui->RUN_IMAGES->setStyleSheet(b ? done : base); break;
+    }
+
+}
+
+void MainWindow::updateRunPath() {
+
+    ui->RUN_PATH->setText(Interface->runPath);
+
+}
+
+void MainWindow::openFolder() {
+
+    QDesktopServices::openUrl(QUrl::fromLocalFile(Interface->runPath));
+
+}
+
+void MainWindow::setRun(bool b) {
+
+    // --- Checks
+    if (b && Interface->runPath.isEmpty()) {
+        ui->RUN->setChecked(false);
+        QMessageBox msgBox;
+        msgBox.setText("Please create a run folder before starting a run.");
+        msgBox.exec();
+        return;
+    }
+
+    // Check if trajectories exist
+
+    // --- GUI appearance
+    if (b) {
+        ui->RUN->setStyleSheet(QString("Background:#099;"));
+        ui->RUN->setText("RUNNING");
+    } else {
+        ui->RUN->setStyleSheet(QString(""));
+        ui->RUN->setText("RUN");
+    }
+
+    // --- Timer
+    if (b) {
+        runTimer->start();
+        runClock->start(1000);
+        ui->RUN_TIME->setText(QString("00:00:00"));
+    } else { runClock->stop(); }
+
+    // Interface
+    Interface->setRun(b);
+
+}
+
+void MainWindow::updateRunTime() {
+
+    QTime t(0,0,0,0);
+    t = t.addMSecs(runTimer->elapsed());
+    ui->RUN_TIME->setText(t.toString("hh:mm:ss"));
 
 }
 

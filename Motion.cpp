@@ -18,10 +18,10 @@ Motion::Motion() {
 
     count_x = 0;
     count_y = 0;
-    pos_x = 0;
-    pos_y = 0;
-    count2mm_x = 0.18;            // pos_x = count_x * count2mm_x
-    count2mm_y = 0.18;            // pos_y = count_y * count2mm_y
+    target_x = 0;
+    target_y = 0;
+    count2mm_x = 0.01812;            // cam_x = count_x * count2mm_x
+    count2mm_y = 0.10005;            // cam_y = count_y * count2mm_y
 
     // === INITIALIZATIONS =================================================
 
@@ -82,6 +82,13 @@ void Motion::initFTDI() {
 /* ====================================================================== *
  *      DISPLACEMENTS                                                     *
  * ====================================================================== */
+
+void Motion::moveFixed() {
+
+    mode = MODE_FIXED;
+    qDebug() << target_x << target_y;
+
+}
 
 void Motion::Move(bool b) {
 

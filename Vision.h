@@ -74,7 +74,8 @@ public:
     bool saveBackground;
     bool processFish;
     double thresholdFish;
-    double minBoutDelay;
+    double thresholdCurvature;
+    long int minBoutDelay;
     long int processTime;
     double dx;
     double dy;
@@ -82,10 +83,6 @@ public:
 
     void startCamera();
     void stopCamera();
-
-public slots:
-
-    void processFrame(Frame);
 
 signals:
 
@@ -97,6 +94,11 @@ signals:
     void updateDisplay(QVector<UMat>);
     void updateCurvature();
     void updateFish();
+    void newBout();
+
+public slots:
+
+    void processFrame(Frame);
 
 private:
 
@@ -106,8 +108,9 @@ private:
 
     // --- Times
     QElapsedTimer timer;
-    qint64 period_display;
-    qint64 tref_display;
+    qint64 periodDisplay;
+    qint64 trefDisplay;
+    qint64 trefBout;
     QVector<qint64> timestamps;
 
     // --- Background

@@ -17,10 +17,11 @@ Vision::Vision() {
     time = 0;
 
     exposure = 5000;
-    period_display = 40e6;   // 25Hz
+    periodDisplay = 40e6;   // 25Hz
 
     timer.start();
-    tref_display = 0;
+    trefDisplay = 0;
+    trefBout = 0;
 
     // --- Background
 
@@ -171,7 +172,7 @@ void Vision::processFrame(Frame F) {
                     RotatedRect R =  minAreaRect(outline);
                     Point2f r[4];
                     R.points(r);
-                    pix2mm = crossLength*2000/(sqrt(pow(r[3].x-r[1].x,2) + pow(r[3].y-r[1].y,2)) +
+                    pix2mm = crossLength*2/(sqrt(pow(r[3].x-r[1].x,2) + pow(r[3].y-r[1].y,2)) +
                             sqrt(pow(r[0].x-r[2].x,2) + pow(r[0].y-r[2].y,2)));
 
                     emit updateCalibration();
@@ -210,8 +211,10 @@ void Vision::processFrame(Frame F) {
             if (contours.size() > maxid) {
 
                 outline = contours.at(maxid);
-                drawContours(BW, contours, maxid, Scalar(255), FILLED);
-                drawContours(Res, contours, maxid, Scalar(255, 255, 255), FILLED);
+                try {
+                    drawContours(BW, contours, maxid, Scalar(255), FILLED);
+                    drawContours(Res, contours, maxid, Scalar(255, 255, 255), FILLED);
+                } catch (...) {}
 
                 // Compute body ellipse
                 fish.body = getEllipse(BW);
@@ -239,9 +242,16 @@ void Vision::processFrame(Frame F) {
 
     }
 
+    // --- Update bouts ----------------------------------------------------
+
+    if (timer.nsecsElapsed() >= trefBout + minBoutDelay && fish.curvature/pix2mm >= thresholdCurvature) {
+        emit newBout();
+        trefBout += minBoutDelay;
+    }
+
     // --- Update display --------------------------------------------------
 
-    if (timer.nsecsElapsed() >= tref_display + period_display) {
+    if (timer.nsecsElapsed() >= trefDisplay + periodDisplay) {
 
         QVector<UMat> display;
         display.push_back(F.img);
@@ -286,7 +296,7 @@ void Vision::processFrame(Frame F) {
         else { emit updateProcessStatus(PROCESS_FAILED); }
 
         emit updateDisplay(display);
-        tref_display += period_display;
+        trefDisplay += periodDisplay;
     }
 
 }

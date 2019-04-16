@@ -217,8 +217,37 @@ void FTDI_Device::DataLoop() {
 
         // --- Mode
 
-        if (Motion->mode) {
-            double dr = sqrt(Motion->dx*Motion->dx + Motion->dy*Motion->dy);
+        switch (Motion->mode) {
+
+        case MODE_FIXED:
+
+            if (Motion->count_x < Motion->target_x) {
+                Motion->is_running_x = true;
+                setPin(0, false);
+            } else if (Motion->count_x > Motion->target_x) {
+                Motion->is_running_x = true;
+                setPin(0, true);
+            } else {
+                Motion->is_running_x = false;
+            }
+
+            if (Motion->count_y < Motion->target_y) {
+                Motion->is_running_y = true;
+                setPin(2, true);
+                setPin(4, true);
+            } else if (Motion->count_y > Motion->target_y) {
+                Motion->is_running_y = true;
+                setPin(2, false);
+                setPin(4, false);
+            } else {
+                Motion->is_running_y = false;
+            }
+
+            if (Motion->count_x == Motion->target_x && Motion->count_y == Motion->target_y) { Motion->mode = MODE_MANUAL; }
+
+            break;
+
+        case MODE_AUTO:
 
             if (Motion->dx<-10) {
                 setPin(0, false);
@@ -241,6 +270,8 @@ void FTDI_Device::DataLoop() {
             } else {
                 Motion->is_running_y = false;
             }
+
+            break;
 
         }
 
@@ -275,8 +306,7 @@ void FTDI_Device::DataLoop() {
                 setPin(1, state_x);
                 state_x = !state_x;
                 if (state_x) {
-                    if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
-                    // Motion->is_running_x = false;
+                    if (OUT & 0x01) { Motion->count_x--; } else { Motion->count_x++; }
                     emit Motion->updatePosition();
                 }
             }
@@ -299,7 +329,6 @@ void FTDI_Device::DataLoop() {
                 state_y = !state_y;
                 if (state_y) {
                     if (OUT>>2 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
-                    // Motion->is_running_y = false;
                     emit Motion->updatePosition();
                 }
             }

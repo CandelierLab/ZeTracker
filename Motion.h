@@ -17,7 +17,8 @@
 #define PAD_UR  7
 
 #define MODE_MANUAL 0
-#define MODE_AUTO   1
+#define MODE_FIXED  1
+#define MODE_AUTO   2
 
 #include <QObject>
 #include <QThread>
@@ -58,8 +59,8 @@ public:
     // Positions
     int count_x;
     int count_y;
-    double pos_x;
-    double pos_y;
+    int target_x;
+    int target_y;
     double count2mm_x;
     double count2mm_y;
 
@@ -82,6 +83,7 @@ public slots:
 
     // Displacements
     void Move(bool);
+    void moveFixed();
 
     // Pointer
     void Pointer(bool);
