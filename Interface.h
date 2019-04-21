@@ -47,6 +47,8 @@ public:
     QString trajectoryFile;
     QString boutsFile;
     QString backgroundFile;
+    QString imagesPath;
+
 
     // --- Connection
     bool sendPositions;
@@ -66,6 +68,7 @@ public slots:
     // --- Runs
     void newRun();
     void setRun(bool);
+    void saveDisplay(QVector<UMat>);
 
     // --- Connection
     void manageConnection(bool);

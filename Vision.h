@@ -71,6 +71,7 @@ public:
     QString calibrationPath;
 
     // Image processing
+    const char *backgroundPath;
     bool saveBackground;
     bool processFish;
     double thresholdFish;
@@ -114,7 +115,6 @@ private:
     QVector<qint64> timestamps;
 
     // --- Background
-    const char *backgroundPath;
     bool isBackground;
     UMat Background;
 

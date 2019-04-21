@@ -653,7 +653,7 @@ p, li { white-space: pre-wrap; }
       <x>890</x>
       <y>570</y>
       <width>162</width>
-      <height>51</height>
+      <height>54</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -722,7 +722,7 @@ p, li { white-space: pre-wrap; }
      <item row="0" column="2">
       <widget class="QCheckBox" name="RUN_BACKGROUND">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
@@ -734,7 +734,7 @@ p, li { white-space: pre-wrap; }
         <bool>true</bool>
        </property>
        <property name="checked">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="tristate">
         <bool>false</bool>
@@ -744,7 +744,7 @@ p, li { white-space: pre-wrap; }
      <item row="1" column="2">
       <widget class="QCheckBox" name="RUN_IMAGES">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
@@ -756,7 +756,7 @@ p, li { white-space: pre-wrap; }
         <bool>true</bool>
        </property>
        <property name="checked">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="tristate">
         <bool>false</bool>
@@ -1436,7 +1436,7 @@ p, li { white-space: pre-wrap; }
        <rect>
         <x>210</x>
         <y>10</y>
-        <width>191</width>
+        <width>211</width>
         <height>81</height>
        </rect>
       </property>

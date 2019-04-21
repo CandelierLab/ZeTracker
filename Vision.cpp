@@ -196,7 +196,9 @@ void Vision::processFrame(Frame F) {
         if (isBackground) {
 
             // Threshold
-            subtract(Background, F.img, BW);
+            // subtract(Background, F.img, BW);
+            // subtract(F.img, Background, BW);
+            absdiff(F.img, Background, BW);
             cv::threshold(BW, BW, thresholdFish*255, 255, cv::THRESH_BINARY);
 
             // Get contours

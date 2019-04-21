@@ -161,6 +161,8 @@ void Interface::newRun() {
 
     trajectoryFile = runPath + QString("Trajectory.dat");
     boutsFile = runPath + QString("Bouts.txt");
+    backgroundFile = runPath + QString("Background.pgm");
+    imagesPath = runPath + QString("Images/");
 
 }
 
@@ -168,6 +170,7 @@ void Interface::setRun(bool b) {
 
     if (b) {
 
+        // --- Trajectory file
         if (Main->metaTrajectory) {
             QFileInfo tfile(trajectoryFile);
             if (!tfile.exists()) {
@@ -186,11 +189,25 @@ void Interface::setRun(bool b) {
             }
         }
 
+        // --- Bout file
         if (Main->metaBouts) {
             boutsFid = new QFile(boutsFile);
             if (boutsFid->open(QIODevice::WriteOnly | QIODevice::Append)) {
                 Main->updateMeta(META_BOUTS, true);
             } else { qWarning() << "Could not open bouts file";}
+        }
+
+        // --- Background
+        if (Main->metaBackground) {
+            QFile::copy(Vision->backgroundPath, backgroundFile);
+            Main->updateMeta(META_BACKGROUND, true);
+        }
+
+        // --- Image folder
+        if (Main->metaImages) {
+            if (!QDir(imagesPath).exists()) { QDir().mkdir(imagesPath); }
+            Main->updateMeta(META_IMAGES, true);
+            connect(Vision, SIGNAL(updateDisplay(QVector<UMat>)), this, SLOT(saveDisplay(QVector<UMat>)));
         }
 
     } else {
@@ -199,6 +216,16 @@ void Interface::setRun(bool b) {
         if (Main->metaBouts && boutsFid->isOpen()) { boutsFid->close(); }
     }
 
+}
+
+void Interface::saveDisplay(QVector<UMat> Img) {
+
+    if (Main->isRunning && Main->metaImages) {
+
+        QString iname = imagesPath + QString("Frame_%1.pgm").arg(Vision->frame, 10, 10, QLatin1Char('0'));
+        cv::imwrite(iname.toStdString().c_str(), Img.at(0));
+
+    }
 }
 
 /* ====================================================================== *
