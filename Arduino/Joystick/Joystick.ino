@@ -37,7 +37,7 @@ void setup() {
 
   // --- Initialization
   motion_state = 0;       // See code below
-  debounce_delay = 50;    // in ms
+  debounce_delay = 10;    // in ms
 
 }
 
@@ -53,7 +53,8 @@ void loop() {
     input.trim();
     
     // --- Get information
-    if (input.equals("id")) {
+    if (input.equals("id")) {int debounce_delay;
+
       
       Serial.println("ZeJoystick");
       
@@ -132,7 +133,8 @@ void loop() {
     if (isLeft) {
       
       if (motion_state!=5) {
-        Serial.println("Motion UL");        
+        Serial.println("Motion UL");
+        delay(debounce_delay);        
         motion_state = 5;
       }
       
@@ -140,12 +142,14 @@ void loop() {
       
       if (motion_state!=6) {
         Serial.println("Motion UR");
+        delay(debounce_delay);
         motion_state = 6;
       }
       
     } else if (motion_state!=3) {
 
       Serial.println("Motion U");
+      delay(debounce_delay);
       motion_state = 3;
       
     }
@@ -156,6 +160,7 @@ void loop() {
       
       if (motion_state!=7) {
         Serial.println("Motion DL");        
+        delay(debounce_delay);
         motion_state = 7;
       }
       
@@ -163,12 +168,14 @@ void loop() {
       
       if (motion_state!=8) {
         Serial.println("Motion DR");
+        delay(debounce_delay);
         motion_state = 8;
       }
       
     } else if (motion_state!=4) {
 
       Serial.println("Motion D");
+      delay(debounce_delay);
       motion_state = 4;
       
     }
@@ -177,6 +184,7 @@ void loop() {
 
     if (motion_state!=1) {
       Serial.println("Motion L");
+      delay(debounce_delay);
       motion_state = 1;
     }
 
@@ -184,6 +192,7 @@ void loop() {
 
     if (motion_state!=2) {
       Serial.println("Motion R");
+      delay(debounce_delay);
       motion_state = 2;
     }
   
@@ -191,6 +200,7 @@ void loop() {
 
     if (motion_state) {
       Serial.println("Motion OFF");
+      delay(debounce_delay);
       motion_state = 0;  
     }
     
