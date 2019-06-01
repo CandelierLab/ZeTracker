@@ -66,6 +66,7 @@ public slots:
 
 signals:
 
+    void homed();
     void enableState(bool);
     void setPad(int, bool);
     void switchTriggered(int);

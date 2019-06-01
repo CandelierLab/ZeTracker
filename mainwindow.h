@@ -54,6 +54,8 @@ public slots:
 
     // --- Motion
 
+    void home();
+    void homed();
     void updatePad(unsigned char);
     void updateMotionState();
     void updatePosition();

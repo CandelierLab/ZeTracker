@@ -225,24 +225,40 @@ void FTDI_Device::DataLoop() {
 
         switch (Motion->mode) {
 
+        case MODE_HOME:
+
+            if (!Motion->is_moving_x && !Motion->is_moving_y) {
+
+                // Reset position
+                Motion->resetCounts();
+
+                emit homed();
+
+                // Move to preset position
+                Motion->mode = MODE_FIXED;
+
+            }
+
+            break;
+
         case MODE_FIXED:
 
             if (Motion->count_x < Motion->target_x) {
                 Motion->is_moving_x = true;
-                setPin(0, false);
+                setPin(0, true);
             } else if (Motion->count_x > Motion->target_x) {
                 Motion->is_moving_x = true;
-                setPin(0, true);
+                setPin(0, false);
             } else {
                 Motion->is_moving_x = false;
             }
 
             if (Motion->count_y < Motion->target_y) {
                 Motion->is_moving_y = true;
-                setPin(4, false);
+                setPin(4, true);
             } else if (Motion->count_y > Motion->target_y) {
                 Motion->is_moving_y = true;
-                setPin(4, true);
+                setPin(4, false);
             } else {
                 Motion->is_moving_y = false;
             }
@@ -289,8 +305,8 @@ void FTDI_Device::DataLoop() {
 
             _read();
             if (NumBytesRead) {
-                if (Motion->is_moving_x & !getPin(0)) { emit switchTriggered(SWITCH_X); }
-                if (Motion->is_moving_y & !getPin(1)) { emit switchTriggered(SWITCH_Y); }
+                if (Motion->is_moving_x & !(OUT>>0 & 0x01) & !getPin(0)) { emit switchTriggered(SWITCH_X); }
+                if (Motion->is_moving_y & !(OUT>>4 & 0x01) & !getPin(1)) { emit switchTriggered(SWITCH_Y); }
             }
 
             // Prepare read for next iteration
@@ -302,7 +318,7 @@ void FTDI_Device::DataLoop() {
                 setPin(1, state_x);
                 state_x = !state_x;
                 if (state_x) {
-                    if (OUT & 0x01) { Motion->count_x--; } else { Motion->count_x++; }
+                    if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
                     emit Motion->updatePosition();
                 }
             }
@@ -313,7 +329,7 @@ void FTDI_Device::DataLoop() {
                 setPin(5, state_y);
                 state_y = !state_y;
                 if (state_y) {
-                    if (OUT>>4 & 0x01) { Motion->count_y--; } else { Motion->count_y++; }
+                    if (OUT>>4 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
                     emit Motion->updatePosition();
                 }
             }

@@ -1412,7 +1412,7 @@ p, li { white-space: pre-wrap; }
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QPushButton" name="POINTER_2">
+     <widget class="QPushButton" name="HOME">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -1427,11 +1427,14 @@ p, li { white-space: pre-wrap; }
         <height>40</height>
        </size>
       </property>
+      <property name="styleSheet">
+       <string notr="true">color:firebrick;</string>
+      </property>
       <property name="text">
        <string>Home</string>
       </property>
       <property name="checkable">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
      </widget>
     </widget>

@@ -86,6 +86,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Motion, SIGNAL(updatePad(unsigned char)), this, SLOT(updatePad(unsigned char)));
     connect(Motion, SIGNAL(updateMotionState()), this, SLOT(updateMotionState()));
 
+    // Home
+    connect(ui->HOME, SIGNAL(clicked(bool)), this, SLOT(home()));
+    connect(Motion, SIGNAL(homed()), this, SLOT(homed()));
+
     // Displacements
     connect(ui->MOVE_UL, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
     connect(ui->MOVE_U,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
@@ -233,6 +237,21 @@ void MainWindow::updatePosition() {
 
     ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm + dx_/dx.size(), 'f', 3));
     ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm + dy_/dy.size(), 'f', 3));
+
+}
+
+void MainWindow::home() {
+
+    Motion->target_x = round(ui->HOME_X->text().toDouble()/Motion->count2mm);
+    Motion->target_y = round(ui->HOME_Y->text().toDouble()/Motion->count2mm);
+    Motion->home();
+
+}
+
+void MainWindow::homed() {
+
+    qInfo() << TITLE_2 << "Homed";
+    ui->HOME->setStyleSheet(QString("color:black;"));
 
 }
 

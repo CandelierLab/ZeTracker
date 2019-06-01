@@ -1,24 +1,10 @@
 #ifndef MOTION_H
 #define MOTION_H
 
-#define AXIS_X 0
-#define AXIS_Y 1
-#define MOVE_NEG -1
-#define MOVE_STOP 0
-#define MOVE_POS  1
-
-#define PAD_DL  0
-#define PAD_D   1
-#define PAD_DR  2
-#define PAD_L   3
-#define PAD_R   4
-#define PAD_UL  5
-#define PAD_U   6
-#define PAD_UR  7
-
 #define MODE_MANUAL 0
-#define MODE_FIXED  1
-#define MODE_AUTO   2
+#define MODE_HOME   1
+#define MODE_FIXED  2
+#define MODE_AUTO   3
 
 #include <QObject>
 #include <QThread>
@@ -48,6 +34,7 @@ public:
 
     // Motion
     void move(QString, bool);
+    bool ishomed;
     bool is_moving_x;
     bool is_moving_y;
     bool is_moving;
@@ -66,6 +53,7 @@ public:
 
 signals:
 
+    void homed();
     void updateMotionState();
     void updatePosition();
     void updatePad(unsigned char);
@@ -76,6 +64,7 @@ public slots:
     void initFTDI();
 
     // Displacements
+    void home();
     void movePad(bool);
     void moveFixed();
 
