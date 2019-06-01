@@ -18,6 +18,7 @@
 
 #include "MsgHandler.h"
 #include "Motion.h"
+#include "Joystick.h"
 #include "Vision.h"
 #include "Interface.h"
 
@@ -53,6 +54,7 @@ public slots:
 
     // --- Motion
 
+    void updatePad(unsigned char);
     void updateMotionState();
     void updatePosition();
     void modeChanged(int);
@@ -106,6 +108,7 @@ private:
 
     // --- Objects
     class Motion *Motion;
+    class Joystick *Joystick;
     class Vision *Vision;
     class Interface *Interface;
 

@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += network widgets printsupport
+greaterThan(QT_MAJOR_VERSION, 4): QT += network widgets printsupport serialport
 
 TARGET = ZeTracker
 TEMPLATE = app
@@ -33,7 +33,8 @@ SOURCES += \
     Vision.cpp \
     FLIR.cpp \
     qcustomplot.cpp \
-    Interface.cpp
+    Interface.cpp \
+    Joystick.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +44,8 @@ HEADERS += \
     Vision.h \
     FLIR.h \
     qcustomplot.h \
-    Interface.h
+    Interface.h \
+    Joystick.h
 
 FORMS += \
         mainwindow.ui

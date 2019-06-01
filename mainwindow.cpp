@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Motion
     Motion = new class Motion();
+    Joystick = new class Joystick(Motion);
 
     // --- Vision
     Vision = new class Vision();
@@ -44,6 +45,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posBufferSize = 100;
     ui->VERSION->setText(Interface->version);
+
+    // --- Motion
+
+    Joystick->scan();
 
     // --- Vision
 
@@ -73,22 +78,23 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Menu
     connect(ui->SCAN_CONTROLLER, SIGNAL(triggered(bool)), Motion, SLOT(initFTDI()));
-    // connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
+    connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), Joystick, SLOT(scan()));
 
     // --- Motion -------------------------------
 
     // State
+    connect(Motion, SIGNAL(updatePad(unsigned char)), this, SLOT(updatePad(unsigned char)));
     connect(Motion, SIGNAL(updateMotionState()), this, SLOT(updateMotionState()));
 
     // Displacements
-    connect(ui->MOVE_UL, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_U,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_UR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_L,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_R,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_DL, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_D,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
-    connect(ui->MOVE_DR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_UL, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_U,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_UR, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_L,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_R,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_DL, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_D,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_DR, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
 
     connect(ui->MOVE_XY, SIGNAL(pressed()), this, SLOT(moveFixed()));
 
@@ -172,6 +178,19 @@ MainWindow::MainWindow(QWidget *parent) :
 /* ====================================================================== *
  *      MOTION                                                            *
  * ====================================================================== */
+
+void MainWindow::updatePad(unsigned char p) {
+
+    ui->MOVE_DL->setChecked(p & 0x01);
+    ui->MOVE_D->setChecked(p>>1 & 0x01);
+    ui->MOVE_DR->setChecked(p>>2 & 0x01);
+    ui->MOVE_L->setChecked(p>>3 & 0x01);
+    ui->MOVE_R->setChecked(p>>4 & 0x01);
+    ui->MOVE_UL->setChecked(p>>5 & 0x01);
+    ui->MOVE_U->setChecked(p>>6 & 0x01);
+    ui->MOVE_UR->setChecked(p>>7 & 0x01);
+
+}
 
 void MainWindow::updateMotionState() {
 

@@ -1,4 +1,5 @@
 #include "Motion.h"
+#include "FTDI.h"
 
 /* ====================================================================== *
  *      CONSTRUCTOR                                                       *
@@ -84,30 +85,80 @@ void Motion::initFTDI() {
 
 void Motion::moveFixed() { mode = MODE_FIXED; }
 
-void Motion::Move(bool b) {
+void Motion::movePad(bool b) { move(QObject::sender()->objectName(), b); }
 
-    // Motion
-    if (QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_L" || QObject::sender()->objectName()=="MOVE_UL") {
+void Motion::move(QString dir, bool b) {
+
+    unsigned char pad = 0;
+
+    if (dir=="MOVE_DL") {
+        FTDI->setPin(0, true);
+        FTDI->setPin(4, true);
+        is_moving_x = b;
+        is_moving_y = b;
+        pad = 0x01;
+    }
+
+    if (dir=="MOVE_D") {
+        FTDI->setPin(4, true);
+        is_moving_x = false;
+        is_moving_y = b;
+        pad = 0x02;
+    }
+
+    if (dir=="MOVE_DR") {
+        FTDI->setPin(0, false);
+        FTDI->setPin(4, true);
+        is_moving_x = b;
+        is_moving_y = b;
+        pad = 0x04;
+    }
+
+    if (dir=="MOVE_L") {
         FTDI->setPin(0, true);
         is_moving_x = b;
+        is_moving_y = false;
+        pad = 0x08;
     }
 
-    if (QObject::sender()->objectName()=="MOVE_DR" || QObject::sender()->objectName()=="MOVE_R" || QObject::sender()->objectName()=="MOVE_UR") {
+    if (dir=="MOVE_R") {
         FTDI->setPin(0, false);
         is_moving_x = b;
+        is_moving_y = false;
+        pad = 0x10;
     }
 
-    if (QObject::sender()->objectName()=="MOVE_U" || QObject::sender()->objectName()=="MOVE_UL" || QObject::sender()->objectName()=="MOVE_UR") {
+    if (dir=="MOVE_UL") {
+        FTDI->setPin(0, true);
         FTDI->setPin(4, false);
+        is_moving_x = b;
         is_moving_y = b;
+        pad = 0x20;
     }
 
-    if (QObject::sender()->objectName()=="MOVE_D"  || QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_DR") {
-        FTDI->setPin(4, true);
+    if (dir=="MOVE_U") {
+        FTDI->setPin(4, false);
+        is_moving_x = false;
         is_moving_y = b;
+        pad = 0x40;
     }
 
+    if (dir=="MOVE_UR") {
+        FTDI->setPin(0, false);
+        FTDI->setPin(4, false);
+        is_moving_x = b;
+        is_moving_y = b;
+        pad = 0x80;
+    }
+
+    if (dir=="MOVE_OFF") {
+        is_moving_x = false;
+        is_moving_y = false;
+    }
+
+    emit updatePad(b?pad:0);
 }
+
 
 /* ====================================================================== *
  *      POINTER                                                           *
@@ -142,7 +193,7 @@ void Motion::switchTriggered(int SW) {
 
     }
 
-    emit setPad(pad);
+    // emit updatePad(pad);
 
 }
 

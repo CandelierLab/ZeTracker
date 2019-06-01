@@ -39,6 +39,8 @@ void setup() {
   motion_state = 0;       // See code below
   debounce_delay = 10;    // in ms
 
+  Serial.print("ZeJoystick");
+
 }
 
 // === Main loop ===================================================
@@ -53,10 +55,9 @@ void loop() {
     input.trim();
     
     // --- Get information
-    if (input.equals("id")) {int debounce_delay;
-
+    if (input.equals("id")) {
       
-      Serial.println("ZeJoystick");
+      Serial.print("ZeJoystick");
       
     // --- Image processing status
     } else if (input.substring(0,2).equals("IP")) {
@@ -78,7 +79,7 @@ void loop() {
   
   if (!digitalRead(pJBut)) {
 
-    Serial.println("Laser");
+    Serial.print("Laser");
     delay(debounce_delay);
     while (!digitalRead(pJBut)) { delay(debounce_delay); }
     
@@ -88,7 +89,7 @@ void loop() {
   
   if (!digitalRead(pWBut)) {
 
-    Serial.println("Track");
+    Serial.print("Track");
     delay(debounce_delay);
     while (!digitalRead(pWBut)) { delay(debounce_delay); }
     
@@ -98,7 +99,7 @@ void loop() {
   
   if (!digitalRead(pBBut)) {
 
-    Serial.println("Run");
+    Serial.print("Run");
     delay(debounce_delay);
     while (!digitalRead(pBBut)) { delay(debounce_delay); }
     
@@ -125,15 +126,20 @@ void loop() {
 
   bool isLeft = analogRead(pLR)>680;
   bool isRight = analogRead(pLR)<340;
-  bool isUp = analogRead(pUD)<340;
-  bool isDown = analogRead(pUD)>680;
+
+  bool isUp = analogRead(pUD)>680;
+  bool isDown = analogRead(pUD)<340;
+
+  // Inverse U/D
+  // bool isUp = analogRead(pUD)<340;
+  // bool isDown = analogRead(pUD)>680;
 
   if (isUp) {
 
     if (isLeft) {
       
       if (motion_state!=5) {
-        Serial.println("Motion UL");
+        Serial.print("MOVE_UL");
         delay(debounce_delay);        
         motion_state = 5;
       }
@@ -141,14 +147,14 @@ void loop() {
     } else if (isRight) {
       
       if (motion_state!=6) {
-        Serial.println("Motion UR");
+        Serial.print("MOVE_UR");
         delay(debounce_delay);
         motion_state = 6;
       }
       
     } else if (motion_state!=3) {
 
-      Serial.println("Motion U");
+      Serial.print("MOVE_U");
       delay(debounce_delay);
       motion_state = 3;
       
@@ -159,7 +165,7 @@ void loop() {
     if (isLeft) {
       
       if (motion_state!=7) {
-        Serial.println("Motion DL");        
+        Serial.print("MOVE_DL");        
         delay(debounce_delay);
         motion_state = 7;
       }
@@ -167,14 +173,14 @@ void loop() {
     } else if (isRight) {
       
       if (motion_state!=8) {
-        Serial.println("Motion DR");
+        Serial.print("MOVE_DR");
         delay(debounce_delay);
         motion_state = 8;
       }
       
     } else if (motion_state!=4) {
 
-      Serial.println("Motion D");
+      Serial.print("MOVE_D");
       delay(debounce_delay);
       motion_state = 4;
       
@@ -183,7 +189,7 @@ void loop() {
   } else if (isLeft) {
 
     if (motion_state!=1) {
-      Serial.println("Motion L");
+      Serial.print("MOVE_L");
       delay(debounce_delay);
       motion_state = 1;
     }
@@ -191,7 +197,7 @@ void loop() {
   } else if (isRight) {
 
     if (motion_state!=2) {
-      Serial.println("Motion R");
+      Serial.print("MOVE_R");
       delay(debounce_delay);
       motion_state = 2;
     }
@@ -199,7 +205,7 @@ void loop() {
   } else {
 
     if (motion_state) {
-      Serial.println("Motion OFF");
+      Serial.print("MOVE_OFF");
       delay(debounce_delay);
       motion_state = 0;  
     }

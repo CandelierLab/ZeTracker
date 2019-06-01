@@ -24,8 +24,6 @@
 #include <QThread>
 #include <QElapsedTimer>
 
-#include "FTDI.h"
-
 // Forward declaration
 class FTDI_Device;
 
@@ -49,6 +47,7 @@ public:
     long int loop_period;
 
     // Motion
+    void move(QString, bool);
     bool is_moving_x;
     bool is_moving_y;
     bool is_moving;
@@ -69,7 +68,7 @@ signals:
 
     void updateMotionState();
     void updatePosition();
-    void setPad(unsigned char);
+    void updatePad(unsigned char);
 
 public slots:
 
@@ -77,7 +76,7 @@ public slots:
     void initFTDI();
 
     // Displacements
-    void Move(bool);
+    void movePad(bool);
     void moveFixed();
 
     // Pointer
