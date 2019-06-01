@@ -38,8 +38,8 @@ void Interface::updateFish() {
 
     Motion->dx = Vision->dx;
     Motion->dy = Vision->dy;
-    pos_x = Motion->count_x*Motion->count2mm_x + Vision->dx;
-    pos_y = Motion->count_y*Motion->count2mm_y + Vision->dy;
+    pos_x = Motion->count_x*Motion->count2mm + Vision->dx;
+    pos_y = Motion->count_y*Motion->count2mm + Vision->dy;
 
     // --- GUI
 
@@ -143,10 +143,9 @@ void Interface::newRun() {
             F << "minBoutDelay       " << Vision->minBoutDelay << " ns" << endl;
 
             F << endl << "# --- Motion" << endl;
-            F << "loop_period_x      " << Motion->loop_period_x << " ns" << endl;
-            F << "loop_period_y      " << Motion->loop_period_y << " ns" << endl;
-            F << "count2mm_x         " << Motion->count2mm_x << " mm" << endl;
-            F << "count2mm_y         " << Motion->count2mm_y << " mm" << endl;
+            F << "loop_period        " << Motion->loop_period << " ns" << endl;
+            F << "count2mm_x         " << Motion->count2mm << " mm" << endl;
+            F << "count2mm_y         " << Motion->count2mm << " mm" << endl;
 
         }
 

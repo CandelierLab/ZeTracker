@@ -53,7 +53,6 @@ public slots:
 
     // --- Motion
 
-    void updatePeriods();    
     void updateMotionState();
     void updatePosition();
     void modeChanged(int);

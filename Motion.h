@@ -46,23 +46,19 @@ public:
 
     // Timing
     QElapsedTimer timer;
-    long int loop_period_x;
-    long int loop_period_y;
-    long int period_x;
-    long int period_y;
+    long int loop_period;
 
     // Motion
-    bool is_running_x;
-    bool is_running_y;
-    bool motion_state;
+    bool is_moving_x;
+    bool is_moving_y;
+    bool is_moving;
 
     // Positions
+    double count2mm;
     int count_x;
     int count_y;
     int target_x;
     int target_y;
-    double count2mm_x;
-    double count2mm_y;
 
     // Feedback
     int mode;
@@ -71,7 +67,6 @@ public:
 
 signals:
 
-    void updatePeriods();
     void updateMotionState();
     void updatePosition();
     void setPad(unsigned char);

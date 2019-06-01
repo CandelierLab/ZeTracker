@@ -1,12 +1,8 @@
 #ifndef FTDI_H
 #define FTDI_H
 
-#define SWITCH_XL 0
-#define SWITCH_XR 1
-#define SWITCH_YLF 2
-#define SWITCH_YLR 3
-#define SWITCH_YRF 4
-#define SWITCH_YRR 5
+#define SWITCH_X 0
+#define SWITCH_Y 1
 
 #include <QObject>
 #include <QString>
@@ -52,6 +48,7 @@ public:
     QString strInputBuffer();
 
     // Digital I/O
+    bool getPin(int);
     void setPin(int, bool);
     void sendOutput();
 

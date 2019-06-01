@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
 
-    Vision->startCamera();
+    // Vision->startCamera();
     setThreshold();
 
     // --- Runs
@@ -76,9 +76,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
 
     // --- Motion -------------------------------
-
-    // Periods
-    connect(Motion, SIGNAL(updatePeriods()), this, SLOT(updatePeriods()));
 
     // State
     connect(Motion, SIGNAL(updateMotionState()), this, SLOT(updateMotionState()));
@@ -176,16 +173,9 @@ MainWindow::MainWindow(QWidget *parent) :
  *      MOTION                                                            *
  * ====================================================================== */
 
-void MainWindow::updatePeriods() {
-
-    ui->PERIOD_LOOP_X->setNum(int(Motion->period_x));
-    ui->PERIOD_LOOP_Y->setNum(int(Motion->period_y));
-
-}
-
 void MainWindow::updateMotionState() {
 
-    if (Motion->motion_state) {
+    if (Motion->is_moving) {
         ui->MOTION_STATE->setText(QString("ENABLED"));
         ui->MOTION_STATE->setStyleSheet(QString("background: #abebc6;"));
     } else {
@@ -202,8 +192,8 @@ void MainWindow::updatePosition() {
     ui->COUNT_Y->setText(QString("%1").arg(Motion->count_y, 5, 10, QLatin1Char('0')));
 
     // Display positions
-    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm_x, 'f', 3));
-    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y, 'f', 3));
+    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm, 'f', 3));
+    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm, 'f', 3));
 
     dx.append(Vision->dx);
     dy.append(Vision->dy);
@@ -222,8 +212,9 @@ void MainWindow::updatePosition() {
     // ui->POS_X->setText(QString::number(Interface->pos_x, 'f', 3));
     // ui->POS_Y->setText(QString::number(Interface->pos_y, 'f', 3));
 
-    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm_x + dx_/dx.size(), 'f', 3));
-    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y + dy_/dy.size(), 'f', 3));
+    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm + dx_/dx.size(), 'f', 3));
+    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm + dy_/dy.size(), 'f', 3));
+
 }
 
 void MainWindow::modeChanged(int m) {

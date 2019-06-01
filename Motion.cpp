@@ -8,20 +8,19 @@ Motion::Motion() {
 
     // === DEFINITIONS =====================================================
 
-    loop_period_x = 1e6;        // Y loop period (ns) | max X speed @ 5e5
-    loop_period_y = 5e6;        // Y loop period (ns) | max Y speed @ 5e5
+    loop_period = 2e5;        // loop period (ns) | max speed @ 2e5 (20µs)
 
-    is_running_x = false;
-    is_running_y = false;
-    motion_state = false;
     mode = MODE_MANUAL;
+    is_moving_x = false;
+    is_moving_y = false;
+    is_moving = false;
+
+    count2mm = 0.028;            // cam_x = count_x * count2mm_x
 
     count_x = 0;
     count_y = 0;
     target_x = 0;
     target_y = 0;
-    count2mm_x = 0.01812;            // cam_x = count_x * count2mm_x
-    count2mm_y = 0.10005;            // cam_y = count_y * count2mm_y
 
     // === INITIALIZATIONS =================================================
 
@@ -83,36 +82,29 @@ void Motion::initFTDI() {
  *      DISPLACEMENTS                                                     *
  * ====================================================================== */
 
-void Motion::moveFixed() {
-
-    mode = MODE_FIXED;
-    qDebug() << target_x << target_y;
-
-}
+void Motion::moveFixed() { mode = MODE_FIXED; }
 
 void Motion::Move(bool b) {
 
     // Motion
     if (QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_L" || QObject::sender()->objectName()=="MOVE_UL") {
         FTDI->setPin(0, true);
-        is_running_x = b;
+        is_moving_x = b;
     }
 
     if (QObject::sender()->objectName()=="MOVE_DR" || QObject::sender()->objectName()=="MOVE_R" || QObject::sender()->objectName()=="MOVE_UR") {
         FTDI->setPin(0, false);
-        is_running_x = b;
+        is_moving_x = b;
     }
 
     if (QObject::sender()->objectName()=="MOVE_U" || QObject::sender()->objectName()=="MOVE_UL" || QObject::sender()->objectName()=="MOVE_UR") {
-        FTDI->setPin(2, true);
-        FTDI->setPin(4, true);
-        is_running_y = b;
+        FTDI->setPin(4, false);
+        is_moving_y = b;
     }
 
     if (QObject::sender()->objectName()=="MOVE_D"  || QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_DR") {
-        FTDI->setPin(2, false);
-        FTDI->setPin(4, false);
-        is_running_y = b;
+        FTDI->setPin(4, true);
+        is_moving_y = b;
     }
 
 }
@@ -123,7 +115,7 @@ void Motion::Move(bool b) {
 
 void Motion::Pointer(bool b) {
 
-    FTDI->setPin(6, b);
+    FTDI->setPin(7, b);
     FTDI->sendOutput();
 
 }
@@ -136,26 +128,16 @@ void Motion::switchTriggered(int SW) {
 
     switch(SW) {
 
-    case SWITCH_XL:
-        is_running_x = false;
-        pad &= 0xD6;     // [11010110]
+    case SWITCH_X:
+        is_moving_x = false;
+        qDebug() << "X";
+        // pad &= 0xD6;     // [11010110]
         break;
 
-    case SWITCH_XR:
-        is_running_x = false;
-        pad &= 0x6B;     // [01101011]
-        break;
-
-    case SWITCH_YLF:
-    case SWITCH_YRF:
-        is_running_y = false;
-        pad &= 0xF8;     // [11111000]
-        break;
-
-    case SWITCH_YLR:
-    case SWITCH_YRR:
-        is_running_y = false;
-        pad &= 0x1F;     // [00011111]
+    case SWITCH_Y:
+        is_moving_y = false;
+        qDebug() << "Y";
+        // pad &= 0xF8;     // [11111000]
         break;
 
     }
