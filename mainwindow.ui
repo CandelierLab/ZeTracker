@@ -1022,7 +1022,7 @@ p, li { white-space: pre-wrap; }
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="MOTION">
      <attribute name="title">
@@ -1201,7 +1201,7 @@ p, li { white-space: pre-wrap; }
        <rect>
         <x>10</x>
         <y>50</y>
-        <width>131</width>
+        <width>134</width>
         <height>121</height>
        </rect>
       </property>

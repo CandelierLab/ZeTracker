@@ -215,6 +215,10 @@ void FTDI_Device::DataLoop() {
     bool state_x = false;
     bool state_y = false;
 
+    // Dividing counters
+    unsigned int dcx = 0;
+    unsigned int dcy = 0;
+
     while (running) {
 
         send = false;
@@ -315,10 +319,21 @@ void FTDI_Device::DataLoop() {
             // --- X Motor output
 
             if (Motion->is_moving_x)  {
-                setPin(1, state_x);
-                state_x = !state_x;
+
                 if (state_x) {
-                    if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
+                    setPin(1, false);
+                    state_x = false;
+                } else {
+                    dcx++;
+                    if (dcx>=Motion->dividor_x) {
+                        setPin(1, true);
+                        state_x = true;
+                        dcx = 0;
+                    }
+                }
+
+                if (state_x) {
+                    Motion->count_x += (OUT & 0x01) ? 1 : -1;
                     emit Motion->updatePosition();
                 }
             }
@@ -326,10 +341,22 @@ void FTDI_Device::DataLoop() {
             // --- Y Motor output
 
             if (Motion->is_moving_y) {
-                setPin(5, state_y);
-                state_y = !state_y;
+
                 if (state_y) {
-                    if (OUT>>4 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
+                    setPin(5, false);
+                    state_y = false;
+                } else {
+                    dcy++;
+                    if (dcy>=Motion->dividor_y) {
+                        setPin(5, true);
+                        state_y = true;
+                        dcy = 0;
+                        Motion->dividor_y++;
+                    }
+                }
+
+                if (state_y) {
+                    Motion->count_x += (OUT>>4 & 0x01) ? 1 : -1;
                     emit Motion->updatePosition();
                 }
             }

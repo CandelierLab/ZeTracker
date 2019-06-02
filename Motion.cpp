@@ -17,8 +17,10 @@ Motion::Motion() {
     is_moving_y = false;
     is_moving = false;
 
-    count2mm = 0.028;            // cam_x = count_x * count2mm_x
+    dividor_x = 1;
+    dividor_y = 1;
 
+    count2mm = 0.028;            // cam_x = count_x * count2mm_x
     count_x = 0;
     count_y = 0;
     target_x = 0;

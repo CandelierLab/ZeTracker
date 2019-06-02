@@ -40,6 +40,8 @@ public:
     bool is_moving;
 
     // Positions
+    unsigned int dividor_x;
+    unsigned int dividor_y;
     double count2mm;
     int count_x;
     int count_y;
