@@ -10,6 +10,7 @@
 #include <QVector>
 #include <QThread>
 #include <QtMath>
+#include <QList>
 #include <QDebug>
 
 #include "Motion.h"

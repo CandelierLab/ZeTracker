@@ -5,6 +5,7 @@
 #define MODE_HOME   1
 #define MODE_FIXED  2
 #define MODE_AUTO   3
+#define MODE_DEMO   99
 
 #include <QObject>
 #include <QThread>
@@ -40,8 +41,8 @@ public:
     bool is_moving;
 
     // Positions
-    unsigned int dividor_x;
-    unsigned int dividor_y;
+    unsigned int percent_x;
+    unsigned int percent_y;
     double count2mm;
     int count_x;
     int count_y;
@@ -52,6 +53,9 @@ public:
     int mode;
     double dx;
     double dy;
+
+    // Debug
+    long int demo_tref;
 
 signals:
 
@@ -76,6 +80,9 @@ public slots:
     // Input
     void switchTriggered(int);
     void resetCounts();
+
+    // Debug
+    void demo(bool);
 
 private:
 

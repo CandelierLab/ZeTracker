@@ -17,8 +17,8 @@ Motion::Motion() {
     is_moving_y = false;
     is_moving = false;
 
-    dividor_x = 1;
-    dividor_y = 1;
+    percent_x = 100;
+    percent_y = 100;
 
     count2mm = 0.028;            // cam_x = count_x * count2mm_x
     count_x = 0;
@@ -170,6 +170,20 @@ void Motion::home() {
     FTDI->setPin(4, false);
     is_moving_x = true;
     is_moving_y = true;
+
+}
+
+void Motion::demo(bool b) {
+
+    if (b) {
+        mode = MODE_DEMO;
+        demo_tref = timer.nsecsElapsed();
+    } else {
+        mode = MODE_MANUAL;
+    }
+
+    is_moving_x = b;
+    is_moving_y = b;
 
 }
 

@@ -205,75 +205,71 @@ void FTDI_Device::DataLoop() {
     qInfo() << "Starting data loop";
 
     // Define time references
-    long int now;
     long int tref = 0;
     Motion->timer.start();
 
     // Booleans
     running = true;
-    bool send;
     bool state_x = false;
     bool state_y = false;
 
-    // Dividing counters
-    unsigned int dcx = 0;
-    unsigned int dcy = 0;
+    // Loop counter
+    unsigned long long counter = 0;
 
     while (running) {
 
-        send = false;
+        if (Motion->timer.nsecsElapsed()-tref >= Motion->loop_period) {
 
-        now = Motion->timer.nsecsElapsed();
+            // === MODE ====================================================
 
-        // --- Mode
+            switch (Motion->mode) {
 
-        switch (Motion->mode) {
+            case MODE_HOME:
 
-        case MODE_HOME:
+                if (!Motion->is_moving_x && !Motion->is_moving_y) {
 
-            if (!Motion->is_moving_x && !Motion->is_moving_y) {
+                    // Reset position
+                    Motion->resetCounts();
 
-                // Reset position
-                Motion->resetCounts();
+                    emit homed();
 
-                emit homed();
+                    // Move to preset position
+                    Motion->mode = MODE_FIXED;
+                    continue;
 
-                // Move to preset position
-                Motion->mode = MODE_FIXED;
+                }
 
-            }
+                break;
 
-            break;
+            case MODE_FIXED:
 
-        case MODE_FIXED:
+                if (Motion->count_x < Motion->target_x) {
+                    Motion->is_moving_x = true;
+                    setPin(0, true);
+                } else if (Motion->count_x > Motion->target_x) {
+                    Motion->is_moving_x = true;
+                    setPin(0, false);
+                } else {
+                    Motion->is_moving_x = false;
+                }
 
-            if (Motion->count_x < Motion->target_x) {
-                Motion->is_moving_x = true;
-                setPin(0, true);
-            } else if (Motion->count_x > Motion->target_x) {
-                Motion->is_moving_x = true;
-                setPin(0, false);
-            } else {
-                Motion->is_moving_x = false;
-            }
+                if (Motion->count_y < Motion->target_y) {
+                    Motion->is_moving_y = true;
+                    setPin(4, true);
+                } else if (Motion->count_y > Motion->target_y) {
+                    Motion->is_moving_y = true;
+                    setPin(4, false);
+                } else {
+                    Motion->is_moving_y = false;
+                }
 
-            if (Motion->count_y < Motion->target_y) {
-                Motion->is_moving_y = true;
-                setPin(4, true);
-            } else if (Motion->count_y > Motion->target_y) {
-                Motion->is_moving_y = true;
-                setPin(4, false);
-            } else {
-                Motion->is_moving_y = false;
-            }
+                if (Motion->count_x == Motion->target_x && Motion->count_y == Motion->target_y) { Motion->mode = MODE_MANUAL; }
 
-            if (Motion->count_x == Motion->target_x && Motion->count_y == Motion->target_y) { Motion->mode = MODE_MANUAL; }
+                break;
 
-            break;
+            case MODE_AUTO:
 
-        case MODE_AUTO:
-
-            /* TO REDO
+                /* TO REDO
             if (Motion->dx<-10) {
                 setPin(0, false);
                 Motion->is_moving_x = true;
@@ -297,17 +293,29 @@ void FTDI_Device::DataLoop() {
             }
             /* --- */
 
-            break;
+                break;
 
-        }
+            case MODE_DEMO:
 
-        // --- Loops
+                double vx = sin(2*M_PI*0.33*double(Motion->timer.nsecsElapsed()-Motion->demo_tref)*1e-9);
+                double vy = sin(2*M_PI*0.25*double(Motion->timer.nsecsElapsed()-Motion->demo_tref)*1e-9);
 
-        if (now-tref >= Motion->loop_period) {
+                setPin(0, vx>0);
+                setPin(4, vy>0);
 
-            // --- Input read
+                Motion->percent_x = unsigned(round(100*abs(vx)));
+                Motion->percent_y = unsigned(round(100*abs(vy)));
 
+                break;
+
+            }
+
+            // === INPUT ===================================================
+
+            // Read input
             _read();
+
+            // Check limit switches
             if (NumBytesRead) {
                 if (Motion->is_moving_x & !(OUT>>0 & 0x01) & !getPin(0)) { emit switchTriggered(SWITCH_X); }
                 if (Motion->is_moving_y & !(OUT>>4 & 0x01) & !getPin(1)) { emit switchTriggered(SWITCH_Y); }
@@ -316,21 +324,16 @@ void FTDI_Device::DataLoop() {
             // Prepare read for next iteration
             _add(0x81);          // [ LOW BYTE READOUT ]
 
-            // --- X Motor output
+            // === OUTPUT ==================================================
 
-            if (Motion->is_moving_x)  {
+            int i = counter % 100;
 
-                if (state_x) {
-                    setPin(1, false);
-                    state_x = false;
-                } else {
-                    dcx++;
-                    if (dcx>=Motion->dividor_x) {
-                        setPin(1, true);
-                        state_x = true;
-                        dcx = 0;
-                    }
-                }
+            // --- X motor output
+
+            if (Motion->is_moving_x && floor(Motion->percent_x*i/100)!=floor(Motion->percent_x*(i+1)/100)) {
+
+                setPin(1, state_x);
+                state_x = !state_x;
 
                 if (state_x) {
                     Motion->count_x += (OUT & 0x01) ? 1 : -1;
@@ -338,35 +341,18 @@ void FTDI_Device::DataLoop() {
                 }
             }
 
-            // --- Y Motor output
+            // --- Y motor output
 
-            if (Motion->is_moving_y) {
+            if (Motion->is_moving_y && floor(Motion->percent_y*i/100)!=floor(Motion->percent_y*(i+1)/100)) {
 
-                if (state_y) {
-                    setPin(5, false);
-                    state_y = false;
-                } else {
-                    dcy++;
-                    if (dcy>=Motion->dividor_y) {
-                        setPin(5, true);
-                        state_y = true;
-                        dcy = 0;
-                        Motion->dividor_y++;
-                    }
-                }
+                setPin(5, state_y);
+                state_y = !state_y;
 
                 if (state_y) {
                     Motion->count_x += (OUT>>4 & 0x01) ? 1 : -1;
                     emit Motion->updatePosition();
                 }
             }
-
-            tref += Motion->loop_period;
-            send = true;
-
-        }
-
-        if (send) {
 
             // Enable state
             if (Motion->is_moving != Motion->is_moving_x || Motion->is_moving_y) {
@@ -375,6 +361,11 @@ void FTDI_Device::DataLoop() {
             }
 
             sendOutput();
+
+            //  === LOOP UPDATE ============================================
+
+            tref += Motion->loop_period;
+            counter++;
         }
 
     }

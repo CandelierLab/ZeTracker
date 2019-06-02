@@ -112,6 +112,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // Mode
     connect(ui->MOTION_MODE, SIGNAL(currentIndexChanged(int)), this, SLOT(modeChanged(int)));
 
+    // Test
+    connect(ui->DEMO, SIGNAL(toggled(bool)), Motion, SLOT(demo(bool)));
+
     // --- Vision -------------------------------
 
     // Process ?
