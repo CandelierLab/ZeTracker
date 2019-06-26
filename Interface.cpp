@@ -104,8 +104,8 @@ void Interface::newRun() {
     // Create run path
     QDateTime D = QDateTime::currentDateTime();
     QString datePath = dataRoot + D.date().toString("yyyy-MM-dd");
-    // runPath = datePath + QString("/Run ") + D.time().toString("hh-mm-ss/");
-    runPath = datePath + QString("/Run test/");
+    runPath = datePath + QString("/Run ") + D.time().toString("hh-mm-ss/");
+    // runPath = datePath + QString("/Run test/");
 
     // Update run path
     Main->updateRunPath();

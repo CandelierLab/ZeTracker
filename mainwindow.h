@@ -77,6 +77,7 @@ public slots:
     // --- Image processing
 
     void saveBackground();
+    void setNumPix();
     void setThreshold();
     void setCurvatureThreshold();
     void setMinBoutDelay();

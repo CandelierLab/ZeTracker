@@ -9,7 +9,7 @@ Motion::Motion() {
 
     // === DEFINITIONS =====================================================
 
-    loop_period = 2e5;        // loop period (ns) | max speed @ 2e5 (20µs)
+    loop_period = 5e5;        // loop period (ns) | max speed @ 5e5 (50µs)
 
     mode = MODE_MANUAL;
     ishomed = false;

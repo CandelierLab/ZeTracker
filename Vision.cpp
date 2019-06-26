@@ -199,7 +199,28 @@ void Vision::processFrame(Frame F) {
             // subtract(Background, F.img, BW);
             // subtract(F.img, Background, BW);
             absdiff(F.img, Background, BW);
+
+            // Threshold
             cv::threshold(BW, BW, thresholdFish*255, 255, cv::THRESH_BINARY);
+
+            vector<Point> fishpix;
+            vector<unsigned int> fishval;
+            findNonZero(BW, fishpix);
+            /*for (unsigned int i=0 ; i<fishpix.) {
+
+            }
+            */
+
+
+
+
+
+
+
+
+
+
+
 
             // Get contours
             vector<vector<Point>> contours;
@@ -231,8 +252,8 @@ void Vision::processFrame(Frame F) {
                 setCurvature();
 
                 // Update position
-                dx = (fish.body.x - width/2)*pix2mm;
-                dy = (height/2 - fish.body.y)*pix2mm;
+                dx = (fish.body.x - width/2);
+                dy = (height/2 - fish.body.y);
 
                 emit updateFish();
 
@@ -384,18 +405,19 @@ void Vision::setHeadTail() {
     V.push_back(chead);
     V.push_back(ctail);
 
-    UMat Ihead(s, s, CV_8UC1, Scalar(0));
-    drawContours(Ihead, V, 0, Scalar(255), FILLED);
-    fish.head = getEllipse(Ihead);
-    fish.head.x += fish.body.x - s/2;
-    fish.head.y += fish.body.y - s/2;
+    try {
+        UMat Ihead(s, s, CV_8UC1, Scalar(0));
+        drawContours(Ihead, V, 0, Scalar(255), FILLED);
+        fish.head = getEllipse(Ihead);
+        fish.head.x += fish.body.x - s/2;
+        fish.head.y += fish.body.y - s/2;
 
-    UMat Itail(s, s, CV_8UC1, Scalar(0));
-    drawContours(Itail, V, 1, Scalar(255), FILLED);
-    fish.tail = getEllipse(Itail);
-    fish.tail.x += fish.body.x - s/2;
-    fish.tail.y += fish.body.y - s/2;
-
+        UMat Itail(s, s, CV_8UC1, Scalar(0));
+        drawContours(Itail, V, 1, Scalar(255), FILLED);
+        fish.tail = getEllipse(Itail);
+        fish.tail.x += fish.body.x - s/2;
+        fish.tail.y += fish.body.y - s/2;
+    } catch (...) {}
 }
 
 void Vision::setCurvature() {

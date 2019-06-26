@@ -74,6 +74,8 @@ public:
     const char *backgroundPath;
     bool saveBackground;
     bool processFish;
+    int nEyes;
+    int nHead;
     double thresholdFish;
     double thresholdCurvature;
     long int minBoutDelay;

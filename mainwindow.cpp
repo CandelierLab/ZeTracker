@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- User interface
     ui->setupUi(this);
     this->setWindowTitle("ZeTracker");
+    this->setWindowIcon(QIcon("../ZeTracker/ZeBeauty.ico.png"));
     move(0,0);
 
     // --- Shortcuts
@@ -57,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     Vision->thresholdCurvature = ui->THRESH_CURV->text().toDouble();
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
+    setNumPix();
 
     // Vision->startCamera();
     setThreshold();
@@ -131,6 +133,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->THRESH_CURV, SIGNAL(editingFinished()), this, SLOT(setCurvatureThreshold()));
 
     // Parameters
+    connect(ui->N_EYES, SIGNAL(editingFinished()), this, SLOT(setNumPix()));
+    connect(ui->N_HEAD, SIGNAL(editingFinished()), this, SLOT(setNumPix()));
     connect(ui->MIN_BOUT_DELAY, SIGNAL(editingFinished()), this, SLOT(setMinBoutDelay()));
 
     // Updates
@@ -202,10 +206,10 @@ void MainWindow::updatePad(unsigned char p) {
 void MainWindow::updateMotionState() {
 
     if (Motion->is_moving) {
-        ui->MOTION_STATE->setText(QString("ENABLED"));
+        ui->MOTION_STATE->setText(QString("MOVING"));
         ui->MOTION_STATE->setStyleSheet(QString("background: #abebc6;"));
     } else {
-        ui->MOTION_STATE->setText(QString("DISABLED"));
+        ui->MOTION_STATE->setText(QString("STALLING"));
         ui->MOTION_STATE->setStyleSheet(QString("background: #ddd;"));
     }
 
@@ -218,11 +222,11 @@ void MainWindow::updatePosition() {
     ui->COUNT_Y->setText(QString("%1").arg(Motion->count_y, 5, 10, QLatin1Char('0')));
 
     // Display positions
-    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm, 'f', 3));
-    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm, 'f', 3));
+    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm, 'f', 1));
+    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm, 'f', 1));
 
-    dx.append(Vision->dx);
-    dy.append(Vision->dy);
+    dx.append(Vision->dx*Vision->pix2mm);
+    dy.append(Vision->dy*Vision->pix2mm);
     while (dx.size() > posBufferSize) { dx.pop_front(); }
     while (dy.size() > posBufferSize) { dy.pop_front(); }
     double dx_ = 0;
@@ -232,14 +236,14 @@ void MainWindow::updatePosition() {
         dy_ += dy.at(i);
     }
 
-    ui->DX->setText(QString::number(dx_/dx.size(), 'f', 3));
-    ui->DY->setText(QString::number(dy_/dy.size(), 'f', 3));
+    ui->DX->setText(QString::number(dx_/dx.size(), 'f', 1));
+    ui->DY->setText(QString::number(dy_/dy.size(), 'f', 1));
 
     // ui->POS_X->setText(QString::number(Interface->pos_x, 'f', 3));
     // ui->POS_Y->setText(QString::number(Interface->pos_y, 'f', 3));
 
-    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm + dx_/dx.size(), 'f', 3));
-    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm + dy_/dy.size(), 'f', 3));
+    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm + dx_/dx.size(), 'f', 1));
+    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm + dy_/dy.size(), 'f', 1));
 
 }
 
@@ -303,6 +307,13 @@ void MainWindow::setCurvatureThreshold() {
 void MainWindow::setMinBoutDelay() {
 
     Vision->minBoutDelay = ui->MIN_BOUT_DELAY->text().toLong()*long(1e6);
+
+}
+
+void MainWindow::setNumPix() {
+
+    Vision->nEyes = ui->N_EYES->text().toInt();
+    Vision->nHead = ui->N_HEAD->text().toInt();
 
 }
 

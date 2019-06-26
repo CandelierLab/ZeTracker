@@ -169,7 +169,6 @@ bool FTDI_Device::getPin(int pin) {
 
 }
 
-
 void FTDI_Device::setPin(int pin, bool state) {
 
     switch (pin) {
@@ -272,18 +271,18 @@ void FTDI_Device::DataLoop() {
                 /* TO REDO
             if (Motion->dx<-10) {
                 setPin(0, false);
-                Motion->is_moving_x = true;
+                Motion->is_running_x = true;
             } else if (Motion->dx>10) {
                 setPin(0, true);
-                Motion->is_moving_x = true;
+                Motion->is_running_x = true;
             } else {
                 Motion->is_moving_x = false;
             }
 
-            if (Motion->dy>10) {
+            if (Motion->dy<-10) {
                 setPin(2, false);
                 setPin(4, false);
-                Motion->is_moving_y = true;
+                Motion->is_running_y = true;
             } else if (Motion->dy<-10) {
                 setPin(2, true);
                 setPin(4, true);
@@ -349,7 +348,7 @@ void FTDI_Device::DataLoop() {
                 state_y = !state_y;
 
                 if (state_y) {
-                    Motion->count_x += (OUT>>4 & 0x01) ? 1 : -1;
+                    Motion->count_y += (OUT>>4 & 0x01) ? 1 : -1;
                     emit Motion->updatePosition();
                 }
             }
