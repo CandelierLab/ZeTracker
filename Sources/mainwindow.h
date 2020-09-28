@@ -18,9 +18,9 @@
 
 #include "MsgHandler.h"
 #include "Motion.h"
-#include "Joystick.h"
 #include "Vision.h"
 #include "Interface.h"
+
 
 namespace Ui { class MainWindow; }
 
@@ -54,13 +54,13 @@ public slots:
 
     // --- Motion
 
-    void home();
-    void homed();
-    void updatePad(unsigned char);
+    void newPeriods();
+    void updatePeriods();
     void updateMotionState();
     void updatePosition();
     void modeChanged(int);
     void moveFixed();
+    void switchTriggeredSetManual();
 
     // --- Vision
 
@@ -78,8 +78,9 @@ public slots:
 
     void saveBackground();
     void setNumPix();
+    void setROIParameters();
     void setThreshold();
-    void setCurvatureThreshold();
+    void setBoutThreshold();
     void setMinBoutDelay();
     void processFrames(int);
     void updateProcessTime();
@@ -100,6 +101,7 @@ public slots:
     // --- Interface
     void setConnected();
     void setDisconnected();
+    void protocolChanged(int);
     void setData2send();
 
 private:
@@ -111,7 +113,6 @@ private:
 
     // --- Objects
     class Motion *Motion;
-    class Joystick *Joystick;
     class Vision *Vision;
     class Interface *Interface;
 

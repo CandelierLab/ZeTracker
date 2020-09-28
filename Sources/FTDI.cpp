@@ -36,9 +36,9 @@ unsigned int FTDI_Device::openDevice() {
         setMPSSE();         // Set MPSSE mode
         setClock();         // Set clock to 200kHz
 
-        // Purge rinput buffer, set all pins to down except C2
+        // Set all pins to down, purge read buffer
         IN = 0;
-        OUT = 0x04;
+        OUT = 0;
         sendOutput();
 
     }
@@ -160,14 +160,8 @@ void FTDI_Device::setClock() {
 }
 
 /* ====================================================================== *
- *      INPUT / OUTPUT                                                    *
+ *      OUTPUT                                                            *
  * ====================================================================== */
-
-bool FTDI_Device::getPin(int pin) {
-
-    return InputBuffer[0]>>(pin) & 0x01;
-
-}
 
 void FTDI_Device::setPin(int pin, bool state) {
 
@@ -204,167 +198,169 @@ void FTDI_Device::DataLoop() {
     qInfo() << "Starting data loop";
 
     // Define time references
-    long int tref = 0;
+    qint64 now;
+    qint64 tref_x = 0;
+    qint64 tref_y = 0;
     Motion->timer.start();
 
     // Booleans
     running = true;
+    bool send;
     bool state_x = false;
     bool state_y = false;
 
-    // Loop counter
-    unsigned long long counter = 0;
-
     while (running) {
 
-        if (Motion->timer.nsecsElapsed()-tref >= Motion->loop_period) {
+        send = false;
 
-            // === MODE ====================================================
+        now = Motion->timer.nsecsElapsed();
+/*
+        if (now<tref_x) {
+            qDebug() << "!#! now = " << now << " and tef_x = " << tref_x << Qt::endl;
+        }
+*/
+        // --- Mode
+/*
+        switch (Motion->mode) {
 
-            switch (Motion->mode) {
+        case MODE_FIXED:
 
-            case MODE_HOME:
-
-                if (!Motion->is_moving_x && !Motion->is_moving_y) {
-
-                    // Reset position
-                    Motion->resetCounts();
-
-                    emit homed();
-
-                    // Move to preset position
-                    Motion->mode = MODE_FIXED;
-                    continue;
-
-                }
-
-                break;
-
-            case MODE_FIXED:
-
-                if (Motion->count_x < Motion->target_x) {
-                    Motion->is_moving_x = true;
-                    setPin(0, true);
-                } else if (Motion->count_x > Motion->target_x) {
-                    Motion->is_moving_x = true;
-                    setPin(0, false);
-                } else {
-                    Motion->is_moving_x = false;
-                }
-
-                if (Motion->count_y < Motion->target_y) {
-                    Motion->is_moving_y = true;
-                    setPin(4, true);
-                } else if (Motion->count_y > Motion->target_y) {
-                    Motion->is_moving_y = true;
-                    setPin(4, false);
-                } else {
-                    Motion->is_moving_y = false;
-                }
-
-                if (Motion->count_x == Motion->target_x && Motion->count_y == Motion->target_y) { Motion->mode = MODE_MANUAL; }
-
-                break;
-
-            case MODE_AUTO:
-
-                /* TO REDO
-            if (Motion->dx<-10) {
-                setPin(0, false);
+            if (Motion->count_x < Motion->target_x) {
                 Motion->is_running_x = true;
-            } else if (Motion->dx>10) {
+                setPin(0, false);
+            } else if (Motion->count_x > Motion->target_x) {
+                Motion->is_running_x = true;
+                setPin(0, true);
+            } else {
+                Motion->is_running_x = false;
+            }
+
+            if (Motion->count_y < Motion->target_y) {
+                Motion->is_running_y = true;
+                setPin(4, true);
+            } else if (Motion->count_y > Motion->target_y) {
+                Motion->is_running_y = true;
+                setPin(4, false);
+            } else {
+                Motion->is_running_y = false;
+            }
+
+            if (Motion->count_x == Motion->target_x && Motion->count_y == Motion->target_y) { Motion->mode = MODE_MANUAL; }
+
+            break;
+
+        case MODE_AUTO:
+
+            if (Motion->dx<-10) {
                 setPin(0, true);
                 Motion->is_running_x = true;
+            } else if (Motion->dx>10) {
+                setPin(0, false);
+                Motion->is_running_x = true;
             } else {
-                Motion->is_moving_x = false;
+                Motion->is_running_x = false;
             }
 
             if (Motion->dy<-10) {
                 setPin(2, false);
-                setPin(4, false);
                 Motion->is_running_y = true;
-            } else if (Motion->dy<-10) {
+            } else if (Motion->dy>10) {
                 setPin(2, true);
-                setPin(4, true);
-                Motion->is_moving_y = true;
+                Motion->is_running_y = true;
             } else {
-                Motion->is_moving_y = false;
-            }
-            /* --- */
-
-                break;
-
-            case MODE_DEMO:
-
-                double vx = sin(2*M_PI*0.33*double(Motion->timer.nsecsElapsed()-Motion->demo_tref)*1e-9);
-                double vy = sin(2*M_PI*0.25*double(Motion->timer.nsecsElapsed()-Motion->demo_tref)*1e-9);
-
-                setPin(0, vx>0);
-                setPin(4, vy>0);
-
-                Motion->percent_x = unsigned(round(100*abs(vx)));
-                Motion->percent_y = unsigned(round(100*abs(vy)));
-
-                break;
-
+                Motion->is_running_y = false;
             }
 
-            // === INPUT ===================================================
+            break;
 
-            // Read input
+        }
+        /**/
+
+        // --- Loops
+
+        if (now-tref_x >= Motion->loop_period_x) {
+
+            Motion->period_x = now - tref_x;
+            emit Motion->updatePeriods();
+
+            // --- Input read
+
             _read();
-
-            // Check limit switches
             if (NumBytesRead) {
-                if (Motion->is_moving_x & !(OUT>>0 & 0x01) & !getPin(0)) { emit switchTriggered(SWITCH_X); }
-                if (Motion->is_moving_y & !(OUT>>4 & 0x01) & !getPin(1)) { emit switchTriggered(SWITCH_Y); }
+
+                // Switches
+
+                 switch (Motion->mode) {
+                 case MODE_AUTO:
+
+                     if (!(InputBuffer[0] & 0x01) | !(InputBuffer[0]>>1 & 0x01) | !(InputBuffer[0]>>2 & 0x01) | !(InputBuffer[0]>>3 & 0x01) | !(InputBuffer[0]>>4 & 0x01) | !(InputBuffer[0]>>5 & 0x01)) {
+                         emit switchTriggered(SWITCH_ANY);
+                     }
+                     break;
+
+                 default:
+                     if (Motion->is_running_x &  (OUT & 0x01) & !(InputBuffer[0] & 0x01))        { emit switchTriggered(SWITCH_XL); }
+                     if (Motion->is_running_x & !(OUT & 0x01) & !(InputBuffer[0]>>1 & 0x01))     { emit switchTriggered(SWITCH_XR); }
+                     if (Motion->is_running_y & !(OUT>>2 & 0x01) & !(InputBuffer[0]>>2 & 0x01))  { emit switchTriggered(SWITCH_YLF); }
+                     if (Motion->is_running_y &  (OUT>>2 & 0x01) & !(InputBuffer[0]>>3 & 0x01))  { emit switchTriggered(SWITCH_YLR); }
+                     if (Motion->is_running_y & !(OUT>>2 & 0x01) & !(InputBuffer[0]>>4 & 0x01))  { emit switchTriggered(SWITCH_YRF); }
+                     if (Motion->is_running_y &  (OUT>>2 & 0x01) & !(InputBuffer[0]>>5 & 0x01))  { emit switchTriggered(SWITCH_YRR); }
+
+                 }
+
             }
 
             // Prepare read for next iteration
             _add(0x81);          // [ LOW BYTE READOUT ]
 
-            // === OUTPUT ==================================================
+            // --- Motor output
 
-            int i = counter % 100;
-
-            // --- X motor output
-
-            if (Motion->is_moving_x && floor(Motion->percent_x*i/100)!=floor(Motion->percent_x*(i+1)/100)) {
-
+            if (Motion->is_running_x)  {
                 setPin(1, state_x);
                 state_x = !state_x;
-
                 if (state_x) {
-                    Motion->count_x += (OUT & 0x01) ? 1 : -1;
+                    if (OUT & 0x01) { Motion->count_x++; } else { Motion->count_x--; }
                     emit Motion->updatePosition();
                 }
             }
 
-            // --- Y motor output
+            tref_x += Motion->loop_period_x;
+            send = true;
 
-            if (Motion->is_moving_y && floor(Motion->percent_y*i/100)!=floor(Motion->percent_y*(i+1)/100)) {
+        }
 
+        if (now-tref_y >= Motion->loop_period_y) {
+
+            Motion->period_y = now - tref_y;
+            emit Motion->updatePeriods();
+
+            // --- Motor output
+
+            if (Motion->is_running_y) {
                 setPin(5, state_y);
                 state_y = !state_y;
-
                 if (state_y) {
-                    Motion->count_y += (OUT>>4 & 0x01) ? 1 : -1;
+                    if (OUT>>2 & 0x01) { Motion->count_y++; } else { Motion->count_y--; }
                     emit Motion->updatePosition();
                 }
             }
 
+            tref_y += Motion->loop_period_y;
+            send = true;
+
+        }
+
+        if (send) {
+
             // Enable state
-            if (Motion->is_moving != Motion->is_moving_x || Motion->is_moving_y) {
-                Motion->is_moving = Motion->is_moving_x || Motion->is_moving_y;
+            if (Motion->motion_state != Motion->is_running_x || Motion->is_running_y) {
+                Motion->motion_state = Motion->is_running_x || Motion->is_running_y;
                 emit Motion->updateMotionState();
             }
 
+            this->setPin(2, true);
+
             sendOutput();
-
-            //  === LOOP UPDATE ============================================
-
-            tref += Motion->loop_period;
-            counter++;
         }
 
     }

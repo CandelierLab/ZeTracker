@@ -41,7 +41,7 @@ MsgHandler::MsgHandler(QTextBrowser* Output) : uiOutput(Output) {
     t_Msg->start(50);
 
     // Style
-    QFile File("../ZeTracker/Infos.css");
+    QFile File("../Sources/Infos.css");
     File.open(QFile::ReadOnly);
     QTextDocument *OutDoc = new QTextDocument;
     OutDoc->setDefaultStyleSheet(File.readAll());

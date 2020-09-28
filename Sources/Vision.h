@@ -11,6 +11,7 @@
 
 #include "opencv2/opencv.hpp"
 #include "FLIR.h"
+#include "anglebuffer.h"
 
 using namespace cv;
 using namespace std;
@@ -67,7 +68,7 @@ public:
     double crossLength;
     bool calibrate;
     bool processCalibration;
-    double pix2mm;
+    double pix2mm;  // mm/pix
     QString calibrationPath;
 
     // Image processing
@@ -76,16 +77,29 @@ public:
     bool processFish;
     int nEyes;
     int nHead;
-    double thresholdFish;
-    double thresholdCurvature;
-    long int minBoutDelay;
+    int fishROIRadius;
+    int fishROIShift;
+    int eyesROIRadius;
+    int thresholdFishHead;
+    int thresholdFishTail;
+    double boutSignal;
+    double minimumBoutThreshold;
     long int processTime;
     double dx;
     double dy;
+
     Fish fish;
+
+    // --- Bout processing
+    double thresholdBout;
+    long int minBoutDelay;
+    int prevBoutBufferMaxSize;
+    int bufferDelay;
 
     void startCamera();
     void stopCamera();
+    void resetBoutProcessing();
+
 
 signals:
 
@@ -121,12 +135,32 @@ private:
     UMat Background;
 
     // --- Image processing
+    vector<Point> fishpix;
     vector<Point> outline;
+    double vx;
+    double vy;
+    double cmxTorso;
+    double cmyTorso;
+    double cmxEyes;
+    double cmyEyes;
+
     int getMaxAreaContourId(vector<vector<Point>>);
     Ellipse getEllipse(const UMat&);
-    void setHeadAngle();
+    Ellipse getEllipse(const vector<Point>&);
+    Moments getContourMoments(const vector<Point>&);
+    double angleDifference(double , double );
+    void setEllipseAngles();
     void setHeadTail();
     void setCurvature();
+    void setCurvatureBodyEllipse();
+
+    // --- Bout processing
+    AngleBuffer *PrevBoutBuffer;
+    QVector<double> MeanDelayBuffer;
+    QVector<double> StdDelayBuffer;
+    QVector<int> PositiveSignalBuffer;
+    double prevBoutBufferMean;
+    double prevBoutBufferStd;
 
 };
 

@@ -1,5 +1,4 @@
 #include "Motion.h"
-#include "FTDI.h"
 
 /* ====================================================================== *
  *      CONSTRUCTOR                                                       *
@@ -9,22 +8,20 @@ Motion::Motion() {
 
     // === DEFINITIONS =====================================================
 
-    loop_period = 5e5;        // loop period (ns) | max speed @ 5e5 (50µs)
+    loop_period_x = 5e5;        // Y loop period (ns) | max X speed @ 5e5
+    loop_period_y = 1e6;        // Y loop period (ns) | max Y speed @ 5e5
 
+    is_running_x = false;
+    is_running_y = false;
+    motion_state = false;
     mode = MODE_MANUAL;
-    ishomed = false;
-    is_moving_x = false;
-    is_moving_y = false;
-    is_moving = false;
 
-    percent_x = 100;
-    percent_y = 100;
-
-    count2mm = 0.028;            // cam_x = count_x * count2mm_x
     count_x = 0;
     count_y = 0;
     target_x = 0;
     target_y = 0;
+    count2mm_x = 0.01812;            // cam_x = count_x * count2mm_x
+    count2mm_y = 0.10005;            // cam_y = count_y * count2mm_y
 
     // === INITIALIZATIONS =================================================
 
@@ -69,7 +66,6 @@ void Motion::initFTDI() {
 
         // --- Connections
         connect(FTDI, SIGNAL(switchTriggered(int)), this, SLOT(switchTriggered(int)));
-        connect(FTDI, SIGNAL(homed()), this, SIGNAL(homed()));
 
         break;
 
@@ -87,103 +83,35 @@ void Motion::initFTDI() {
  *      DISPLACEMENTS                                                     *
  * ====================================================================== */
 
-void Motion::moveFixed() { mode = MODE_FIXED; }
+void Motion::moveFixed() {
 
-void Motion::movePad(bool b) { move(QObject::sender()->objectName(), b); }
-
-void Motion::move(QString dir, bool b) {
-
-    unsigned char pad = 0;
-
-    if (dir=="MOVE_DL") {
-        FTDI->setPin(0, false);
-        FTDI->setPin(4, false);
-        is_moving_x = b;
-        is_moving_y = b;
-        pad = 0x01;
-    }
-
-    if (dir=="MOVE_D") {
-        FTDI->setPin(4, false);
-        is_moving_x = false;
-        is_moving_y = b;
-        pad = 0x02;
-    }
-
-    if (dir=="MOVE_DR") {
-        FTDI->setPin(0, true);
-        FTDI->setPin(4, false);
-        is_moving_x = b;
-        is_moving_y = b;
-        pad = 0x04;
-    }
-
-    if (dir=="MOVE_L") {
-        FTDI->setPin(0, false);
-        is_moving_x = b;
-        is_moving_y = false;
-        pad = 0x08;
-    }
-
-    if (dir=="MOVE_R") {
-        FTDI->setPin(0, true);
-        is_moving_x = b;
-        is_moving_y = false;
-        pad = 0x10;
-    }
-
-    if (dir=="MOVE_UL") {
-        FTDI->setPin(0, false);
-        FTDI->setPin(4, true);
-        is_moving_x = b;
-        is_moving_y = b;
-        pad = 0x20;
-    }
-
-    if (dir=="MOVE_U") {
-        FTDI->setPin(4, true);
-        is_moving_x = false;
-        is_moving_y = b;
-        pad = 0x40;
-    }
-
-    if (dir=="MOVE_UR") {
-        FTDI->setPin(0, true);
-        FTDI->setPin(4, true);
-        is_moving_x = b;
-        is_moving_y = b;
-        pad = 0x80;
-    }
-
-    if (dir=="MOVE_OFF") {
-        is_moving_x = false;
-        is_moving_y = false;
-    }
-
-    emit updatePad(b?pad:0);
-}
-
-void Motion::home() {
-
-    mode = MODE_HOME;
-    FTDI->setPin(0, false);
-    FTDI->setPin(4, false);
-    is_moving_x = true;
-    is_moving_y = true;
+    mode = MODE_FIXED;
+    qDebug() << target_x << target_y;
 
 }
 
-void Motion::demo(bool b) {
+void Motion::Move(bool b) {
 
-    if (b) {
-        mode = MODE_DEMO;
-        demo_tref = timer.nsecsElapsed();
-    } else {
-        mode = MODE_MANUAL;
+    // Motion
+    if (QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_L" || QObject::sender()->objectName()=="MOVE_UL") {
+        FTDI->setPin(0, false);
+        is_running_x = b;
     }
 
-    is_moving_x = b;
-    is_moving_y = b;
+    if (QObject::sender()->objectName()=="MOVE_DR" || QObject::sender()->objectName()=="MOVE_R" || QObject::sender()->objectName()=="MOVE_UR") {
+        FTDI->setPin(0, true);
+        is_running_x = b;
+    }
+
+    if (QObject::sender()->objectName()=="MOVE_U" || QObject::sender()->objectName()=="MOVE_UL" || QObject::sender()->objectName()=="MOVE_UR") {
+        FTDI->setPin(4, true);
+        is_running_y = b;
+    }
+
+    if (QObject::sender()->objectName()=="MOVE_D"  || QObject::sender()->objectName()=="MOVE_DL" || QObject::sender()->objectName()=="MOVE_DR") {
+        FTDI->setPin(4, false);
+        is_running_y = b;
+    }
 
 }
 
@@ -205,19 +133,36 @@ void Motion::Pointer(bool b) {
 void Motion::switchTriggered(int SW) {
 
     switch(SW) {
-
-    case SWITCH_X:
-        is_moving_x = false;
+    case SWITCH_ANY:
+        is_running_x = false;
+        is_running_y = false;
+        pad &= 0x00;
+        break;
+    case SWITCH_XL:
+        is_running_x = false;
+        pad &= 0xD6;     // [11010110]
         break;
 
-    case SWITCH_Y:
-        is_moving_y = false;
+    case SWITCH_XR:
+        is_running_x = false;
+        pad &= 0x6B;     // [01101011]
+        break;
+
+    case SWITCH_YLF:
+    case SWITCH_YRF:
+        is_running_y = false;
+        pad &= 0xF8;     // [11111000]
+        break;
+
+    case SWITCH_YLR:
+    case SWITCH_YRR:
+        is_running_y = false;
+        pad &= 0x1F;     // [00011111]
         break;
 
     }
-
-    emit updatePad(0);
-
+    emit switchTriggeredSetManual();
+    emit setPad(pad);
 }
 
 void Motion::resetCounts() {

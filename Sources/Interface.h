@@ -1,6 +1,11 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#define PROTOCOL_UNIFORM            0
+#define PROTOCOL_SPLIT              1
+#define PROTOCOL_UNIFORM_RELATIVE   2
+
+
 #include <QMainWindow>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -51,6 +56,8 @@ public:
 
 
     // --- Connection
+    int protocol;
+    bool connectionToPyBeautySuccesful;
     bool sendPositions;
     bool sendBouts;
 
@@ -73,6 +80,7 @@ public slots:
     // --- Connection
     void manageConnection(bool);
     void sendRunInfo();
+    void respondToConnectionConfirmation();
 
 
 private:

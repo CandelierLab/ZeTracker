@@ -1,15 +1,30 @@
 #ifndef MOTION_H
 #define MOTION_H
 
+#define AXIS_X 0
+#define AXIS_Y 1
+#define MOVE_NEG -1
+#define MOVE_STOP 0
+#define MOVE_POS  1
+
+#define PAD_DL  0
+#define PAD_D   1
+#define PAD_DR  2
+#define PAD_L   3
+#define PAD_R   4
+#define PAD_UL  5
+#define PAD_U   6
+#define PAD_UR  7
+
 #define MODE_MANUAL 0
-#define MODE_HOME   1
+#define MODE_AUTO   1
 #define MODE_FIXED  2
-#define MODE_AUTO   3
-#define MODE_DEMO   99
 
 #include <QObject>
 #include <QThread>
 #include <QElapsedTimer>
+
+#include "FTDI.h"
 
 // Forward declaration
 class FTDI_Device;
@@ -31,38 +46,36 @@ public:
 
     // Timing
     QElapsedTimer timer;
-    long int loop_period;
+    qint64 loop_period_x;
+    qint64 loop_period_y;
+    qint64 period_x;
+    qint64 period_y;
 
     // Motion
-    void move(QString, bool);
-    bool ishomed;
-    bool is_moving_x;
-    bool is_moving_y;
-    bool is_moving;
+    bool is_running_x;
+    bool is_running_y;
+    bool motion_state;
 
     // Positions
-    unsigned int percent_x;
-    unsigned int percent_y;
-    double count2mm;
     int count_x;
     int count_y;
     int target_x;
     int target_y;
+    double count2mm_x;
+    double count2mm_y;
 
     // Feedback
     int mode;
     double dx;
     double dy;
 
-    // Debug
-    long int demo_tref;
-
 signals:
 
-    void homed();
+    void updatePeriods();
     void updateMotionState();
     void updatePosition();
-    void updatePad(unsigned char);
+    void switchTriggeredSetManual();
+    void setPad(unsigned char);
 
 public slots:
 
@@ -70,8 +83,7 @@ public slots:
     void initFTDI();
 
     // Displacements
-    void home();
-    void movePad(bool);
+    void Move(bool);
     void moveFixed();
 
     // Pointer
@@ -80,9 +92,6 @@ public slots:
     // Input
     void switchTriggered(int);
     void resetCounts();
-
-    // Debug
-    void demo(bool);
 
 private:
 

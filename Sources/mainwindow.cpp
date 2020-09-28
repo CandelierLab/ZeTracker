@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- User interface
     ui->setupUi(this);
     this->setWindowTitle("ZeTracker");
-    this->setWindowIcon(QIcon("../ZeTracker/ZeBeauty.ico.png"));
     move(0,0);
 
     // --- Shortcuts
@@ -34,7 +33,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Motion
     Motion = new class Motion();
-    Joystick = new class Joystick(Motion);
 
     // --- Vision
     Vision = new class Vision();
@@ -47,20 +45,17 @@ MainWindow::MainWindow(QWidget *parent) :
     posBufferSize = 100;
     ui->VERSION->setText(Interface->version);
 
-    // --- Motion
-
-    Joystick->scan();
-
     // --- Vision
 
     ui->PIX2MM->setText(QString::number(Vision->pix2mm*1000, 'f', 1));
     Vision->minBoutDelay = long(ui->MIN_BOUT_DELAY->text().toDouble()*1e6);
-    Vision->thresholdCurvature = ui->THRESH_CURV->text().toDouble();
+    Vision->thresholdBout = ui->THRESH_BOUT->text().toDouble();
     Vision->processCalibration = ui->PROCESS_CALIBRATION->isChecked();
     Vision->processFish = ui->PROCESS_VISION->isChecked();
     setNumPix();
+    setROIParameters();
 
-    // Vision->startCamera();
+    Vision->startCamera();
     setThreshold();
 
     // --- Runs
@@ -71,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
     runTimer = new QElapsedTimer();
 
     // --- Connection
-    setData2send();
+    protocolChanged(PROTOCOL_UNIFORM);
 
     // === CONNECTIONS =====================================================
 
@@ -80,27 +75,27 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // --- Menu
     connect(ui->SCAN_CONTROLLER, SIGNAL(triggered(bool)), Motion, SLOT(initFTDI()));
-    connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), Joystick, SLOT(scan()));
+    // connect(ui->SCAN_JOYSTICK, SIGNAL(triggered(bool)), this, SLOT(ScanJoystick()));
 
     // --- Motion -------------------------------
 
+    // Periods
+    connect(ui->LOOP_PERIOD_X, SIGNAL(editingFinished()), this, SLOT(newPeriods()));
+    connect(ui->LOOP_PERIOD_Y, SIGNAL(editingFinished()), this, SLOT(newPeriods()));
+    connect(Motion, SIGNAL(updatePeriods()), this, SLOT(updatePeriods()));
+
     // State
-    connect(Motion, SIGNAL(updatePad(unsigned char)), this, SLOT(updatePad(unsigned char)));
     connect(Motion, SIGNAL(updateMotionState()), this, SLOT(updateMotionState()));
 
-    // Home
-    connect(ui->HOME, SIGNAL(clicked(bool)), this, SLOT(home()));
-    connect(Motion, SIGNAL(homed()), this, SLOT(homed()));
-
     // Displacements
-    connect(ui->MOVE_UL, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_U,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_UR, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_L,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_R,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_DL, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_D,  SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
-    connect(ui->MOVE_DR, SIGNAL(clicked(bool)), Motion, SLOT(movePad(bool)));
+    connect(ui->MOVE_UL, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_U,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_UR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_L,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_R,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_DL, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_D,  SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
+    connect(ui->MOVE_DR, SIGNAL(toggled(bool)), Motion, SLOT(Move(bool)));
 
     connect(ui->MOVE_XY, SIGNAL(pressed()), this, SLOT(moveFixed()));
 
@@ -113,9 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Mode
     connect(ui->MOTION_MODE, SIGNAL(currentIndexChanged(int)), this, SLOT(modeChanged(int)));
-
-    // Test
-    connect(ui->DEMO, SIGNAL(toggled(bool)), Motion, SLOT(demo(bool)));
+    connect(Motion, SIGNAL(switchTriggeredSetManual()), this, SLOT(switchTriggeredSetManual()));
 
     // --- Vision -------------------------------
 
@@ -128,13 +121,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->BACKGROUND_VISION, SIGNAL(pressed()), this, SLOT(saveBackground()));
 
     // Thresholds
-    connect(ui->THRESH_BW_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
+    connect(ui->THRESH_HEAD_BW_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
+    connect(ui->THRESH_TAIL_BW_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
     connect(ui->THRESH_CH_SLIDER, SIGNAL(valueChanged(int)), this, SLOT(setThreshold()));
-    connect(ui->THRESH_CURV, SIGNAL(editingFinished()), this, SLOT(setCurvatureThreshold()));
+    connect(ui->THRESH_BOUT, SIGNAL(editingFinished()), this, SLOT(setBoutThreshold()));
 
     // Parameters
     connect(ui->N_EYES, SIGNAL(editingFinished()), this, SLOT(setNumPix()));
     connect(ui->N_HEAD, SIGNAL(editingFinished()), this, SLOT(setNumPix()));
+    connect(ui->EYES_ROI_RADIUS, SIGNAL(editingFinished()), this, SLOT(setROIParameters()));
+    connect(ui->FISH_ROI_RADIUS, SIGNAL(editingFinished()), this, SLOT(setROIParameters()));
+    connect(ui->FISH_ROI_SHIFT, SIGNAL(editingFinished()), this, SLOT(setROIParameters()));
+
     connect(ui->MIN_BOUT_DELAY, SIGNAL(editingFinished()), this, SLOT(setMinBoutDelay()));
 
     // Updates
@@ -153,8 +151,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->CONNECT, SIGNAL(toggled(bool)), Interface, SLOT(manageConnection(bool)));
     connect(ui->SEND_RUN_INFO, SIGNAL(pressed()), Interface, SLOT(sendRunInfo()));
-    connect(ui->SEND_POSITIONS, SIGNAL(toggled(bool)), this, SLOT(setData2send()));
-    connect(ui->SEND_BOUTS, SIGNAL(toggled(bool)), this, SLOT(setData2send()));
+    connect(ui->PROTOCOL, SIGNAL(currentIndexChanged(int)), this, SLOT(protocolChanged(int)));
 
     connect(Interface, SIGNAL(updatePosition()), this, SLOT(updatePosition()));
     connect(Interface, SIGNAL(updateBouts()), this, SLOT(updateBouts()));
@@ -190,26 +187,27 @@ MainWindow::MainWindow(QWidget *parent) :
  *      MOTION                                                            *
  * ====================================================================== */
 
-void MainWindow::updatePad(unsigned char p) {
+void MainWindow::newPeriods() {
 
-    ui->MOVE_DL->setChecked(p & 0x01);
-    ui->MOVE_D->setChecked(p>>1 & 0x01);
-    ui->MOVE_DR->setChecked(p>>2 & 0x01);
-    ui->MOVE_L->setChecked(p>>3 & 0x01);
-    ui->MOVE_R->setChecked(p>>4 & 0x01);
-    ui->MOVE_UL->setChecked(p>>5 & 0x01);
-    ui->MOVE_U->setChecked(p>>6 & 0x01);
-    ui->MOVE_UR->setChecked(p>>7 & 0x01);
+    Motion->loop_period_x = ui->LOOP_PERIOD_X->text().toLong();
+    Motion->loop_period_y = ui->LOOP_PERIOD_Y->text().toLong();
+
+}
+
+void MainWindow::updatePeriods() {
+
+    ui->PERIOD_LOOP_X->setNum(int(Motion->period_x));
+    ui->PERIOD_LOOP_Y->setNum(int(Motion->period_y));
 
 }
 
 void MainWindow::updateMotionState() {
 
-    if (Motion->is_moving) {
-        ui->MOTION_STATE->setText(QString("MOVING"));
+    if (Motion->motion_state) {
+        ui->MOTION_STATE->setText(QString("ENABLED"));
         ui->MOTION_STATE->setStyleSheet(QString("background: #abebc6;"));
     } else {
-        ui->MOTION_STATE->setText(QString("STALLING"));
+        ui->MOTION_STATE->setText(QString("DISABLED"));
         ui->MOTION_STATE->setStyleSheet(QString("background: #ddd;"));
     }
 
@@ -222,8 +220,8 @@ void MainWindow::updatePosition() {
     ui->COUNT_Y->setText(QString("%1").arg(Motion->count_y, 5, 10, QLatin1Char('0')));
 
     // Display positions
-    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm, 'f', 1));
-    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm, 'f', 1));
+    ui->CAM_X->setText(QString::number(Motion->count_x*Motion->count2mm_x, 'f', 3));
+    ui->CAM_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y, 'f', 3));
 
     dx.append(Vision->dx*Vision->pix2mm);
     dy.append(Vision->dy*Vision->pix2mm);
@@ -236,35 +234,32 @@ void MainWindow::updatePosition() {
         dy_ += dy.at(i);
     }
 
-    ui->DX->setText(QString::number(dx_/dx.size(), 'f', 1));
-    ui->DY->setText(QString::number(dy_/dy.size(), 'f', 1));
+    ui->DX->setText(QString::number(dx_/dx.size(), 'f', 3));
+    ui->DY->setText(QString::number(dy_/dy.size(), 'f', 3));
 
     // ui->POS_X->setText(QString::number(Interface->pos_x, 'f', 3));
     // ui->POS_Y->setText(QString::number(Interface->pos_y, 'f', 3));
 
-    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm + dx_/dx.size(), 'f', 1));
-    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm + dy_/dy.size(), 'f', 1));
-
-}
-
-void MainWindow::home() {
-
-    Motion->target_x = round(ui->HOME_X->text().toDouble()/Motion->count2mm);
-    Motion->target_y = round(ui->HOME_Y->text().toDouble()/Motion->count2mm);
-    Motion->home();
-
-}
-
-void MainWindow::homed() {
-
-    qInfo() << TITLE_2 << "Homed";
-    ui->HOME->setStyleSheet(QString("color:black;"));
-
+    ui->POS_X->setText(QString::number(Motion->count_x*Motion->count2mm_x + dx_/dx.size(), 'f', 3));
+    ui->POS_Y->setText(QString::number(Motion->count_y*Motion->count2mm_y + dy_/dy.size(), 'f', 3));
 }
 
 void MainWindow::modeChanged(int m) {
 
     Motion->mode = m;
+
+    // Stop all motion
+    Motion->is_running_x = false;
+    Motion->is_running_y = false;
+
+}
+
+void MainWindow::switchTriggeredSetManual() {
+
+    // Stop run
+    setRun(false);
+    // Switch to manual control
+    ui->MOTION_MODE->setCurrentIndex(0);
 
 }
 
@@ -290,17 +285,20 @@ void MainWindow::saveBackground() {
 
 void MainWindow::setThreshold() {
 
-    ui->THRESH_BW->setText(QString::number(double(ui->THRESH_BW_SLIDER->value())/1000, 'f', 3));
-    Vision->thresholdFish = double(ui->THRESH_BW_SLIDER->value())/1000;
+    ui->THRESH_HEAD_BW->setText(QString::number(ui->THRESH_HEAD_BW_SLIDER->value()));
+    Vision->thresholdFishHead = ui->THRESH_HEAD_BW_SLIDER->value();
+
+    ui->THRESH_TAIL_BW->setText(QString::number(ui->THRESH_TAIL_BW_SLIDER->value()));
+    Vision->thresholdFishTail = ui->THRESH_TAIL_BW_SLIDER->value();
 
     ui->THRESH_CH->setText(QString::number(double(ui->THRESH_CH_SLIDER->value())/1000, 'f', 3));
     Vision->thresholdCalibration = double(ui->THRESH_CH_SLIDER->value())/1000;
 
 }
 
-void MainWindow::setCurvatureThreshold() {
+void MainWindow::setBoutThreshold() {
 
-    Vision->thresholdCurvature = ui->THRESH_CURV->text().toDouble();
+    Vision->thresholdBout = ui->THRESH_BOUT->text().toDouble();
 
 }
 
@@ -317,6 +315,15 @@ void MainWindow::setNumPix() {
 
 }
 
+void MainWindow::setROIParameters() {
+
+    Vision->fishROIRadius = ui->FISH_ROI_RADIUS->text().toInt();
+    Vision->fishROIShift = ui->FISH_ROI_SHIFT->text().toInt();
+    Vision->eyesROIRadius = ui->EYES_ROI_RADIUS->text().toInt();
+
+}
+
+
 /* --- IMAGE PROCESING -------------------------------------------------- */
 
 void MainWindow::processFrames(int b) {
@@ -328,6 +335,10 @@ void MainWindow::processFrames(int b) {
     }
 
     // Process fish
+    if (b>0) {
+        // Reset bout processing
+        Vision->resetBoutProcessing();        
+    }
     Vision->processFish = b>0;
 
 }
@@ -501,7 +512,7 @@ void MainWindow::initPlots() {
 
     // Labels & box
     ui->PLOT_CURVATURE->xAxis->setLabel("Time (s)");
-    ui->PLOT_CURVATURE->yAxis->setLabel("Curvature (1/mm)");
+    ui->PLOT_CURVATURE->yAxis->setLabel("Bout signal");
     ui->PLOT_CURVATURE->axisRect()->setupFullAxesBox();
 
     // Axis ranges
@@ -674,11 +685,14 @@ void MainWindow::setDisconnected() {
 
 }
 
+void MainWindow::protocolChanged(int p) {
+
+    Interface->protocol = p;
+
+}
+
 void MainWindow::setData2send() {
-
-    Interface->sendPositions = ui->SEND_POSITIONS->isChecked();
-    Interface->sendBouts = ui->SEND_BOUTS->isChecked();
-
+    return;
 }
 
 /* ====================================================================== *

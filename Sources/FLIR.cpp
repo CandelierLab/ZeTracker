@@ -232,7 +232,7 @@ void Camera_FLIR::grab() {
             // flip(M,M,1);
 
             Frame F;
-            F.img = M.getUMat(ACCESS_RW);
+            M.getUMat(ACCESS_RW).copyTo(F.img);
 
             // --- Get ChunkData
             Spinnaker::ChunkData chunkData = pImg->GetChunkData();

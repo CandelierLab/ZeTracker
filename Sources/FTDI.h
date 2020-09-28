@@ -1,8 +1,13 @@
 #ifndef FTDI_H
 #define FTDI_H
 
-#define SWITCH_X 0
-#define SWITCH_Y 1
+#define SWITCH_XL 0
+#define SWITCH_XR 1
+#define SWITCH_YLF 2
+#define SWITCH_YLR 3
+#define SWITCH_YRF 4
+#define SWITCH_YRR 5
+#define SWITCH_ANY 6
 
 #include <QObject>
 #include <QString>
@@ -10,16 +15,15 @@
 #include <QVector>
 #include <QThread>
 #include <QtMath>
-#include <QList>
 #include <QDebug>
 
 #include "Motion.h"
 #include "MsgHandler.h"
 
 #ifdef __linux__
-#include <../../ftd2xx_linux/ftd2xx.h>
+#include <../ftd2xx_linux/ftd2xx.h>
 #elif _WIN32
-#include <../../ftd2xx_win/ftd2xx.h>
+#include <../ftd2xx_win/ftd2xx.h>
 #else
 #endif
 
@@ -49,7 +53,6 @@ public:
     QString strInputBuffer();
 
     // Digital I/O
-    bool getPin(int);
     void setPin(int, bool);
     void sendOutput();
 
@@ -67,7 +70,6 @@ public slots:
 
 signals:
 
-    void homed();
     void enableState(bool);
     void setPad(int, bool);
     void switchTriggered(int);

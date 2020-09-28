@@ -1,4 +1,4 @@
-#include "Interface.h"
+ #include "Interface.h"
 #include "mainwindow.h"
 
 /* ====================================================================== *
@@ -14,8 +14,9 @@ Interface::Interface(MainWindow *MW, class Motion *M, class Vision *V)
     boutsFid = new QFile(boutsFile);
 
     conn = new QTcpSocket(this);
+    connectionToPyBeautySuccesful = false;
 
-    version = QString("1.0");
+    version = QString("1.31");
     dataRoot = QString("/home/ljp/Science/ZeBeauty/Data/");
     lastBout.i = 0;
 
@@ -37,33 +38,51 @@ void Interface::updateFish() {
     // --- Position
 
     Motion->dx = Vision->dx;
-    Motion->dy = Vision->dy;
-    pos_x = Motion->count_x*Motion->count2mm + Vision->dx;
-    pos_y = Motion->count_y*Motion->count2mm + Vision->dy;
+    Motion->dy = Vision->dy;    // natural coordinates
+    pos_x = Motion->count_x*Motion->count2mm_x + Vision->dx;
+    pos_y = Motion->count_y*Motion->count2mm_y + Vision->dy;
 
     // --- GUI
 
     // Update position
     emit updatePosition();
 
-    // Update curvature
+    // --- Send position update
+    if (Main->isRunning && conn->isWritable()) {
+        string command;
+        switch (protocol) {
+        case PROTOCOL_UNIFORM:
+            command = "x=" + to_string(Vision->dx*Vision->pix2mm) + ";y=" + to_string(Vision->dy*Vision->pix2mm) + ";\n";
+            break;
+        case PROTOCOL_UNIFORM_RELATIVE:
+            command = "x=" + to_string(Vision->dx*Vision->pix2mm) + ";y=" + to_string(Vision->dy*Vision->pix2mm) + ";\n";
+            break;
+        case PROTOCOL_SPLIT:
+            command = "x=" + to_string(Vision->dx*Vision->pix2mm) + ";y=" + to_string(Vision->dy*Vision->pix2mm) + ";th=" + to_string(Vision->fish.head.theta) + ";\n";
+            break;
+        }
+        conn->write(command.c_str());
+        conn->flush();
+    }
+
+
+    // Update bout signal
     Main->pTime.append(Vision->time*1e-9);
-    Main->pCurv.append(Vision->fish.curvature/Vision->pix2mm);
+    Main->pCurv.append(Vision->boutSignal);
 
     while (Main->pTime.size() > Main->maxLengthCurv) {
         Main->pTime.pop_front();
         Main->pCurv.pop_front();
     }
 
-    // --- Save Bout
+    // --- Save trajectory point
 
     if (Main->isRunning) {
         QDataStream F(trajectoryFid);
         F << Vision->time << double(Motion->count_x) << double(Motion->count_y)
           << Vision->dx << Vision->dy << pos_x << pos_y << Vision->fish.body.theta
           << Vision->fish.head.x << Vision->fish.head.y << Vision->fish.head.theta
-          << Vision->fish.tail.x << Vision->fish.tail.y << Vision->fish.tail.theta
-          << Vision->fish.xc << Vision->fish.yc << Vision->fish.curvature;
+          << Vision->fish.xc << Vision->fish.yc;
     }
 
 }
@@ -83,9 +102,21 @@ void Interface::newBout() {
     }
 
     // --- Send bout
-    if (Main->isRunning && sendBouts && conn->isWritable()) {
-        conn->write("bout");
-        conn->flush();
+    if (Main->isRunning && conn->isWritable()) {
+        switch (protocol) {
+        case PROTOCOL_UNIFORM:
+            conn->write("BOUT\n");
+            conn->flush();
+            break;
+        case PROTOCOL_UNIFORM_RELATIVE:
+            conn->write("BOUT\n");
+            conn->flush();
+            break;
+        case PROTOCOL_SPLIT:
+            conn->write("BOUT\n");
+            conn->flush();
+            break;
+        }
     }
 
     // --- Update GUI
@@ -138,14 +169,24 @@ void Interface::newRun() {
             F << "width              " << Vision->width << " pix" << endl;
             F << "height             " << Vision->height << " pix" << endl;
             F << "pix2mm             " << Vision->pix2mm << " mm" << endl;
-            F << "thresholdFish      " << Vision->thresholdFish << " %" << endl;
-            F << "thresholdCurvature " << Vision->thresholdCurvature << " 1/mm" << endl;
+            F << "thresholdFishHead      " << Vision->thresholdFishHead << " abs. pix val." << endl;
+            F << "thresholdFishTail      " << Vision->thresholdFishTail << " abs. pix val." << endl;
+            F << "eyesROIRadius       " << Vision->eyesROIRadius << " pix" << endl;
+            F << "fishROIRadius       " << Vision->fishROIRadius  << " pix" << endl;
+            F << "fishROIShift       " << Vision->fishROIShift << " pix" << endl;
+            F << "nEyes       " << Vision->nEyes << " pix" << endl;
+            F << "nHead       " << Vision->nHead << " pix" << endl;
+            F << "thresholdBout " << Vision->thresholdBout << " (rel.)" << endl;
+            F << "minimumBoutThreshold "  << Vision->minimumBoutThreshold << " val." << endl;
             F << "minBoutDelay       " << Vision->minBoutDelay << " ns" << endl;
+            F << "prevBoutBufferMaxSize " << Vision->prevBoutBufferMaxSize << " (rel.)" << endl;
+            F << "bufferDelay       " << Vision->bufferDelay << " ns" << endl;
 
             F << endl << "# --- Motion" << endl;
-            F << "loop_period        " << Motion->loop_period << " ns" << endl;
-            F << "count2mm_x         " << Motion->count2mm << " mm" << endl;
-            F << "count2mm_y         " << Motion->count2mm << " mm" << endl;
+            F << "loop_period_x      " << Motion->loop_period_x << " ns" << endl;
+            F << "loop_period_y      " << Motion->loop_period_y << " ns" << endl;
+            F << "count2mm_x         " << Motion->count2mm_x << " mm" << endl;
+            F << "count2mm_y         " << Motion->count2mm_y << " mm" << endl;
 
         }
 
@@ -234,18 +275,82 @@ void Interface::saveDisplay(QVector<UMat> Img) {
 void Interface::manageConnection(bool b) {
 
     if (b) {
-        conn->connectToHost("localhost", 3231);
+       // conn->connectToHost("localhost", 3231);
+        conn->connectToHost("10.0.0.20", 3231);
+
     } else {
-        conn->write("quit");
+        conn->write("END\n");
         conn->flush();
         conn->close();
+        connectionToPyBeautySuccesful = false;
     }
 
 }
 
 void Interface::sendRunInfo() {
+    if (!Main->isRunning) {
+        if (conn->state()==QAbstractSocket::ConnectedState) {
+            if (connectionToPyBeautySuccesful) {
+                // Reset the run in pyBeauty
+                conn->write("END\n");
+                conn->flush();
 
-    conn->write(("path=" + runPath).toStdString().c_str());
-    conn->flush();
+                // Reset success flag
+                connectionToPyBeautySuccesful = false;
+            }
 
+            QString protocolCommand;
+
+            switch (protocol) {
+            case PROTOCOL_UNIFORM:
+                protocolCommand = "SET_MODE_UNIFORM";
+                break;
+            case PROTOCOL_UNIFORM_RELATIVE:
+                protocolCommand = "SET_MODE_UNIFORM_RELATIVE";
+                break;
+            case PROTOCOL_SPLIT:
+                protocolCommand = "SET_MODE_SPLIT";
+                break;
+            }
+
+            conn->write((protocolCommand + ";path=" + runPath).toStdString().c_str());
+            conn->flush();
+            qInfo() << "Sent run info.";
+
+            // Wait for confirmation of success
+            connect(conn, SIGNAL(readyRead()), this, SLOT(respondToConnectionConfirmation()));
+            qInfo() << "Waiting for confirmation...";
+
+        } else {
+            // conn not in ConnectedState
+            qInfo() << "Cannot send run info, no connection.";
+            return;
+        }
+    } else {
+        qInfo() << "Cannot send run info when the experiment is running.";
+    }
+}
+
+void Interface::respondToConnectionConfirmation() {
+    // Read response
+    QByteArray responseBA = conn->readLine(128);
+    QString receivedCommand = QString::fromStdString(responseBA.data());
+    //qInfo() << receivedCommand;
+
+    if (receivedCommand=="MODE_SET") {
+        qInfo() << "Received confirmation of success.";
+        connectionToPyBeautySuccesful = true;
+        // Disconnect self
+        disconnect(conn, SIGNAL(readyRead()), this, SLOT(respondToConnectionConfirmation()));
+    } else {
+        if (receivedCommand=="FILE_EXISTS") {
+            qInfo() << ("File already exists.");
+            QMessageBox msgBox;
+            msgBox.setText("pyBeauty: The file already exists for this run. Please create a new run.");
+            msgBox.exec();
+            return;
+        } else {
+            qInfo() << ("Unknown message received into conn: " + receivedCommand);
+        }
+    }
 }
